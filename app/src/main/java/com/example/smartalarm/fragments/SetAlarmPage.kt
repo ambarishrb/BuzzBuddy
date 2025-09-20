@@ -38,6 +38,8 @@ class SetAlarmPage : Fragment() {
     private var _binding: FragmentSetAlarmBinding? = null
     private val binding get() = _binding!!
 
+
+//    this is touch comment
     private lateinit var smartAlarmViewModel: SmartAlarmViewModel
     private lateinit var alarmAdapter: AlarmAdapter
     private lateinit var alarmStatus: TextView
