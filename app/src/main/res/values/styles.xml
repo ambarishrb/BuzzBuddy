@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="CustomAlertDialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:background">@color/your_background_color</item>
+        <item name="android:textColor">@color/your_text_color</item>
+        <item name="android:buttonBarButtonStyle">@style/AlertButtonStyle</item>
+        <item name="android:windowBackground">@color/your_background_color</item>
+    </style>
+
+    <style name="AlertButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:backgroundTint">@color/your_button_color</item>
+        <item name="android:textColor">@color/your_button_text_color</item>
+    </style>
+
+</resources>

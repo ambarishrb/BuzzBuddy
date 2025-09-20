@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Softer background color (off-white) -->
+    <solid android:color="#fff7f8" />
+
+    <!-- Rounded corners -->
+    <corners android:radius="20dp" />
+
+    <!-- Optional subtle border -->
+    <stroke
+        android:width="1dp"
+        android:color="#f2f2f7" />
+
+</shape>

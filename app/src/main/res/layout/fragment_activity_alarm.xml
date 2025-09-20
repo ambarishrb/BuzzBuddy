@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_gravity="center"
+    android:layout_height="match_parent"
+    android:background="#e77b77">
+
+    <!-- Clock Icon -->
+    <ImageView
+        android:id="@+id/ivClockIcon"
+        android:layout_width="42dp"
+        android:layout_height="34dp"
+        android:layout_marginTop="32dp"
+        android:contentDescription="Alarm Clock"
+        android:src="@android:drawable/ic_lock_idle_alarm"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+    <!-- Alarm Time -->
+
+    <!-- Alarm Label -->
+    <TextView
+        android:id="@+id/tvAlarmTime"
+        android:layout_width="311dp"
+        android:layout_height="117dp"
+        android:layout_marginTop="100dp"
+        android:gravity="center"
+        android:text="6:30 AM"
+        android:textColor="#FFFFFF"
+        android:textSize="72sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivClockIcon" />
+
+    <TextView
+        android:id="@+id/tvAlarmLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Wake up"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
+        app:layout_constraintTop_toBottomOf="@id/tvAlarmTime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:orientation="horizontal">
+
+    <!-- Snooze Button -->
+        <Button
+            android:id="@+id/btnSnooze"
+            android:layout_width="0dp"
+            android:layout_height="63dp"
+            android:layout_weight="1"
+            android:layout_margin="16dp"
+            android:layout_marginBottom="30dp"
+            android:backgroundTint="#FFCCCB"
+            app:cornerRadius="24dp"
+            android:text="Snooze"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Dismiss Button -->
+        <Button
+            android:id="@+id/dismiss"
+            android:layout_width="0dp"
+            android:layout_height="63dp"
+            android:layout_weight="1"
+            android:layout_margin="18dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#FFFFFF"
+            app:cornerRadius="24dp"
+            android:text="Dismiss"
+            android:textColor="#FF3B30"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

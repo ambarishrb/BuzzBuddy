@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="red">#F20707</color>
+    <color name="grey">#1B1B1B</color>
+    <color name="crimson">#C1132B</color>
+    <color name="app_theme">#FF4C6D</color>
+    <color name="switch_track">#FF3B30</color>
+    <color name="your_background_color">#FAFAFA</color>
+    <color name="your_text_color">#212121</color>
+    <color name="your_button_color">#FF3B30</color>
+    <color name="your_button_text_color">#FFFFFF</color>
+    <color name="your_icon_color">#8E8E93</color>
+    <color name="dialog_bg">#F9F9F9</color>
+    <color name="dialog_divider">#E0E0E0</color>
+
+</resources>
