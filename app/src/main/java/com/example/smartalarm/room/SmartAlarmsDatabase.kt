@@ -6,36 +6,26 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.smartalarm.model.SmartAlarm
 
-@Database (entities = [SmartAlarm::class], version = 1)
+@Database(entities = [SmartAlarm::class], version = 1)
 abstract class SmartAlarmsDatabase : RoomDatabase() {
 
-    abstract fun SmartAlarmDAO(): smartAlarmDao
+    // DAO function - camelCase
+    abstract fun smartAlarmDao(): smartAlarmDao
 
-
-    companion object{
-
+    companion object {
         @Volatile
-        private var instance : SmartAlarmsDatabase? = null
+        private var instance: SmartAlarmsDatabase? = null
 
-        fun getDatabaseInstance(context: Context): SmartAlarmsDatabase{
-
-            synchronized(this){
-
-                if (instance == null){
-
-                    instance = Room.databaseBuilder(
-                        context.applicationContext,
-                        SmartAlarmsDatabase::class.java,
-                        "smart_alarms"
-
-
-                    ).build()
-                }
-
+        fun getDatabase(context: Context): SmartAlarmsDatabase {
+            return instance ?: synchronized(this) {
+                val tempInstance = Room.databaseBuilder(
+                    context.applicationContext,
+                    SmartAlarmsDatabase::class.java,
+                    "smart_alarms"
+                ).build()
+                instance = tempInstance
+                tempInstance
             }
-            return instance as SmartAlarmsDatabase
         }
-
     }
-
 }

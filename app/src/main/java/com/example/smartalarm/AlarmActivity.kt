@@ -39,10 +39,15 @@ class AlarmActivity : AppCompatActivity() {
 
 
         if (savedInstanceState == null || intent.getBooleanExtra("openAlarmFragment", false)) {
+            val alarmId = intent.getIntExtra("alarmId", -1)
+            val fragment = ActivityAlarmFragment().apply {
+                arguments = Bundle().apply { putInt("alarmId", alarmId) }
+            }
             supportFragmentManager.beginTransaction()
-                .replace(R.id.alarm_fragment_container, ActivityAlarmFragment())
+                .replace(R.id.alarm_fragment_container, fragment)
                 .commit()
         }
+
     }
 
     // Handle new intent if activity is already running
@@ -51,6 +56,11 @@ class AlarmActivity : AppCompatActivity() {
         setIntent(intent)
 
         if (intent.getBooleanExtra("openAlarmFragment", false)) {
+            val alarmId = intent.getIntExtra("alarmId", -1)
+            val fragment = ActivityAlarmFragment().apply {
+                arguments = Bundle().apply { putInt("alarmId", alarmId) }
+            }
+
             supportFragmentManager.beginTransaction()
                 .replace(R.id.alarm_fragment_container, ActivityAlarmFragment())
                 .commit()

@@ -3,6 +3,7 @@ package com.example.smartalarm.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.example.smartalarm.model.SmartAlarm
 import com.example.smartalarm.repository.SmartAlarmRepository
@@ -27,6 +28,13 @@ class SmartAlarmViewModel(application: Application) : AndroidViewModel(applicati
     fun update(smartAlarm: SmartAlarm) = viewModelScope.launch(Dispatchers.IO) {
         repository.update(smartAlarm)
     }
+
+    fun getAlarmById(alarmId: Int): LiveData<SmartAlarm?> {
+        return repository.getAlarmById(alarmId)
+    }
+
+
+
 
     fun delete(smartAlarm: SmartAlarm) = viewModelScope.launch(Dispatchers.IO) {
         repository.delete(smartAlarm)

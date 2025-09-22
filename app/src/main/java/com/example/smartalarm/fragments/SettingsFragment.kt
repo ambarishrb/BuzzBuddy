@@ -41,10 +41,8 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val toolbar = view.findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
-        toolbar.title = "Settings"
-        toolbar.setTitleTextColor(resources.getColor(R.color.black))
-        toolbar.setBackgroundColor(resources.getColor(R.color.red))
+
+
     }
 
     companion object {

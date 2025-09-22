@@ -222,22 +222,37 @@ class SetAlarmPage : Fragment() {
      */
     private fun setNextAlarmStatus() {
         smartAlarmViewModel.getAllAlarms().observe(viewLifecycleOwner) { alarms ->
-            val nextAlarm = alarms.minByOrNull { it.alarmTime_hour * 60 + it.alarmTime_minute }
+            if (alarms.isEmpty()) {
+                alarmStatus.text = "No alarms set"
+                alarmStatus.setTextColor("#8E8E93".toColorInt())
+                return@observe
+            }
+
+            val now = Calendar.getInstance()
+            val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+
+            // Find closest upcoming alarm (today or tomorrow)
+            val nextAlarm = alarms.minByOrNull { alarm ->
+                val alarmMinutes = alarm.alarmTime_hour * 60 + alarm.alarmTime_minute
+                val diff = alarmMinutes - nowMinutes
+                if (diff >= 0) diff else diff + 24 * 60  // if already passed today → add 24h
+            }
 
             if (nextAlarm != null) {
                 val hour12 = if (nextAlarm.alarmTime_hour % 12 == 0) 12 else nextAlarm.alarmTime_hour % 12
                 val amPm = if (nextAlarm.alarmTime_hour >= 12) "PM" else "AM"
-                alarmStatus.text = "Next alarm at ${String.format("%02d:%02d %s", hour12, nextAlarm.alarmTime_minute, amPm)}"
-                alarmStatus.setTextColor("#8E8E93".toColorInt())
 
+                alarmStatus.text = "Next alarm at ${
+                    String.format("%02d:%02d %s", hour12, nextAlarm.alarmTime_minute, amPm)
+                }"
+                alarmStatus.setTextColor("#8E8E93".toColorInt())
             } else {
                 alarmStatus.text = "No alarms set"
                 alarmStatus.setTextColor("#8E8E93".toColorInt())
-
             }
         }
-
     }
+
 
 
 
