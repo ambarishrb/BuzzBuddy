@@ -31,6 +31,7 @@ object AlarmPlayer {
             val alarmUri = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
             mediaPlayer = MediaPlayer.create(context, alarmUri)
             mediaPlayer?.isLooping = true
+            mediaPlayer?.setVolume()
             mediaPlayer?.start()
         }
 
@@ -51,6 +52,8 @@ object AlarmPlayer {
             vibrator?.vibrate(pattern, 0)
         }
     }
+
+    // gradulaly increase volume
 
     fun stop() {
         mediaPlayer?.stop()

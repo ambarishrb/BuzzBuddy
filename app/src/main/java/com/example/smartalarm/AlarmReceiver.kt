@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 
 class AlarmReceiver : BroadcastReceiver() {
 
+
     companion object {
         const val CHANNEL_ID = "alarm_channel"
         const val NOTIFICATION_ID = 123
@@ -18,6 +19,9 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+
+        val alarmId = intent.getIntExtra("alarmId", -1)
+
         when (intent.action) {
             ACTION_STOP_ALARM -> {
                 AlarmPlayer.stop()
@@ -35,6 +39,7 @@ class AlarmReceiver : BroadcastReceiver() {
 //                    putExtra("hour", hour)
 //                    putExtra("minute", minute)
                     putExtra("openAlarmFragment", true)
+                    putExtra("alarmId", alarmId)
                 }
                 context.startActivity(activityIntent)
             }

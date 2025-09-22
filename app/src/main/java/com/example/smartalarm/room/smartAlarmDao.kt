@@ -1,12 +1,7 @@
 package com.example.smartalarm.room
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import com.example.smartalarm.model.SmartAlarm
 
 @Dao
@@ -26,4 +21,11 @@ interface smartAlarmDao {
 
     @Query("SELECT * FROM smart_alarms WHERE alarmTime_hour = :hour AND alarmTime_minute = :minute LIMIT 1")
     suspend fun getAlarmByTime(hour: Int, minute: Int): SmartAlarm?
+
+    @Query("SELECT * FROM smart_alarms WHERE alarmId = :id LIMIT 1")
+    fun getAlarmByIdLive(id: Int): LiveData<SmartAlarm?>
+
+    // Synchronous function needed for BootReceiver
+    @Query("SELECT * FROM smart_alarms")
+    fun getAllAlarmsSync(): List<SmartAlarm>
 }

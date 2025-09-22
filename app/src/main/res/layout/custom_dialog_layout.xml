@@ -38,6 +38,8 @@
         android:hint="Set Alarm Name"
         android:inputType="text"
         android:textColor="@color/black"
+        android:backgroundTint="@color/black"
+        android:textColorHint="#808080"
         tools:ignore="LabelFor" />
 
     <!-- Time Picker Horizontal Layout -->

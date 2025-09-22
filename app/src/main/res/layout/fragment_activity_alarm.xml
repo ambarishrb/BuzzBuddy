@@ -63,8 +63,7 @@
             android:layout_width="0dp"
             android:layout_height="63dp"
             android:layout_weight="1"
-            android:layout_margin="16dp"
-            android:layout_marginBottom="30dp"
+            android:layout_margin="18dp"
             android:backgroundTint="#FFCCCB"
             app:cornerRadius="24dp"
             android:text="Snooze"
@@ -79,12 +78,11 @@
             android:layout_height="63dp"
             android:layout_weight="1"
             android:layout_margin="18dp"
-            android:layout_marginBottom="16dp"
             android:backgroundTint="#FFFFFF"
             app:cornerRadius="24dp"
             android:text="Dismiss"
             android:textColor="#FF3B30"
-            android:textSize="18sp"
+            android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="parent" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

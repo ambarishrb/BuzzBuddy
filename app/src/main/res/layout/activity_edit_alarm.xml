@@ -30,7 +30,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:autofillHints="name"
+            android:hint="Set Alarm Name"
             android:inputType="text"
+            android:backgroundTint="@color/black"
+            android:textColorHint="#808080"
             android:textColor="@color/black"
             tools:ignore="LabelFor" />
 

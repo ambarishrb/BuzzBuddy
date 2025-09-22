@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
-    android:padding="16dp"
     android:background="#f9fafb">
 
     <!-- Header Title -->
@@ -13,7 +12,7 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="25dp"
         android:background="#fefefe"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="parent"
@@ -23,6 +22,10 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="Alarms"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginRight="16dp"
             app:titleTextColor="@color/black" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -31,7 +34,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="40dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginHorizontal="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/add_alarm_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
@@ -43,15 +47,15 @@
     <!-- Settings Icon -->
     <ImageView
         android:id="@+id/settings_icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_width="30dp"
+        android:layout_height="27dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="50dp"
+        android:layout_marginEnd="35dp"
+        android:contentDescription="ic_settings"
+        android:src="@drawable/ic_settings"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_alignParentEnd="true"
-        android:src="@drawable/ic_settings"
-        android:contentDescription="ic_settings"
         app:tint="#8E8e93" />
 
     <!-- Next Alarm Indicator -->
@@ -60,6 +64,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingStart="16dp"
+        android:layout_marginLeft="16dp"
         android:paddingEnd="16dp"
         android:text="Next alarm at 06:00 AM"
         android:textColor="#8E8E93"
@@ -87,8 +92,8 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="35dp"
+        android:layout_marginBottom="35dp"
         android:src="@drawable/icon_add"
         android:backgroundTint="#e14f62"
         android:contentDescription="Add Alarm" />
