@@ -26,8 +26,8 @@
     <!-- Alarm Label -->
     <TextView
         android:id="@+id/tvAlarmTime"
-        android:layout_width="311dp"
-        android:layout_height="117dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="100dp"
         android:gravity="center"
         android:text="6:30 AM"
@@ -43,7 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Wake up"
-        android:textSize="24sp"
+        android:textSize="35sp"
         android:textColor="#FFFFFF"
         app:layout_constraintTop_toBottomOf="@id/tvAlarmTime"
         app:layout_constraintStart_toStartOf="parent"
@@ -51,7 +51,7 @@
         android:layout_marginTop="16dp" />
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="120dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -61,12 +61,15 @@
         <Button
             android:id="@+id/btnSnooze"
             android:layout_width="0dp"
-            android:layout_height="63dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
-            android:layout_margin="18dp"
-            android:backgroundTint="#FFCCCB"
+            android:layout_marginTop="18dp"
+            android:layout_marginLeft="18dp"
+            android:layout_marginRight="7dp"
+            android:backgroundTint="#C54848"
             app:cornerRadius="24dp"
             android:text="Snooze"
+            android:background="@drawable/button_activityalarm"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="parent" />
@@ -75,13 +78,16 @@
         <Button
             android:id="@+id/dismiss"
             android:layout_width="0dp"
-            android:layout_height="63dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
-            android:layout_margin="18dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginRight="18dp"
+            android:layout_marginLeft="7dp"
+            android:background="@drawable/button_activityalarm"
             android:backgroundTint="#FFFFFF"
             app:cornerRadius="24dp"
             android:text="Dismiss"
-            android:textColor="#FF3B30"
+            android:textColor="#C54848"
             android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="parent" />
     </LinearLayout>

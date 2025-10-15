@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SmartAlarm"
+rootProject.name = "BuzzBuddy"
 include(":app")
  

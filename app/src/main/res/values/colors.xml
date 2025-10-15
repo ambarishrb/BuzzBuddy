@@ -14,5 +14,6 @@
     <color name="your_icon_color">#8E8E93</color>
     <color name="dialog_bg">#F9F9F9</color>
     <color name="dialog_divider">#E0E0E0</color>
+    <color name="activityalarm_bg">#e77b77</color>
 
 </resources>

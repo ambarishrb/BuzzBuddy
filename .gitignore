@@ -14,12 +14,12 @@
 .cxx
 local.properties
 .idea/AndroidProjectSystem.xml
+.idea/appInsightsSettings.xml
 .idea/compiler.xml
 .idea/deploymentTargetSelector.xml
 .idea/gradle.xml
 .idea/migrations.xml
 .idea/misc.xml
 .idea/runConfigurations.xml
-.idea/studiobot.xml
 .idea/vcs.xml
-.kotlin/errors/errors-1758217954034.log
+app/release/app-release.aab

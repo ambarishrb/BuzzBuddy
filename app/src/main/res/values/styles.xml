@@ -13,4 +13,15 @@
         <item name="android:textColor">@color/your_button_text_color</item>
     </style>
 
+    <style name="Snooze_dialog_theme" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <!-- Dialog background color -->
+        <item name="android:background">#fff7f8</item>
+
+        <!-- Title & message text color -->
+        <item name="android:textColorPrimary">@color/black</item>
+
+        <!-- Buttons color (OK, Cancel) -->
+        <item name="colorAccent">#e14f62</item>
+    </style>
+
 </resources>

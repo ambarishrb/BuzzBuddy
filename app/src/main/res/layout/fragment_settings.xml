@@ -12,16 +12,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="25dp"
-        android:background="#fefefe"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:background="#fefefe">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/settings_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:layout_marginLeft="16dp"
             android:layout_marginTop="5dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="5dp"
@@ -38,82 +34,82 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-
             android:padding="16dp">
 
-            <!-- General Section -->
+            <!-- GENERAL Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="GENERAL"
                 android:textStyle="bold"
-                android:layout_marginStart="6dp"
                 android:textColor="#525A69"
                 android:paddingTop="8dp"
                 android:paddingBottom="4dp"/>
 
-            <!-- Snooze duration -->
+            <!-- Snooze Duration -->
             <LinearLayout
+                android:id="@+id/layoutSnooze"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:elevation="1dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="2dp"
                 android:background="@drawable/rounded_bg"
-                android:paddingVertical="8dp">
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:elevation="1dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="@color/black"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
-                    android:text="Default snooze duration"
-                    android:textSize="16sp"/>
+                    android:text="Snooze duration"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tvSnoozeDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingEnd="4dp"
                     android:text="10 minutes"
-                    android:textColor="@android:color/black"
-                    android:paddingEnd="4dp"/>
+                    android:textColor="@android:color/black" />
 
                 <ImageView
                     android:id="@+id/btnEditSnooze"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    app:tint="#8E8e93"
+                    android:contentDescription="Edit snooze duration"
                     android:src="@drawable/ic_settings_trigger"
-                    android:contentDescription="Edit snooze duration"/>
+                    app:tint="#8E8e93" />
             </LinearLayout>
 
-            <!-- Alarm Section -->
+            <!-- ALARM Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ALARM"
                 android:textStyle="bold"
-                android:layout_marginStart="6dp"
                 android:textColor="#525A69"
                 android:paddingTop="18dp"
                 android:paddingBottom="4dp"/>
 
             <!-- Alarm Sound -->
             <LinearLayout
+                android:id="@+id/layoutAlarmSound"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:elevation="1dp"
-                android:paddingStart="6dp"
-
-                android:paddingEnd="2dp"
                 android:background="@drawable/rounded_bg"
-                android:paddingVertical="8dp">
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -131,7 +127,7 @@
                     android:layout_height="wrap_content"
                     android:text="Sunrise"
                     android:textColor="@android:color/black"
-                    android:paddingEnd="4dp"/>
+                    android:paddingEnd="4dp" />
 
                 <ImageView
                     android:id="@+id/btnChangeSound"
@@ -148,7 +144,6 @@
                 android:layout_height="wrap_content"
                 android:text="Alarm volume"
                 android:layout_marginTop="6dp"
-                android:layout_marginStart="6dp"
                 android:textSize="16sp"
                 android:textColor="@color/black"
                 android:paddingTop="8dp"
@@ -158,7 +153,8 @@
                 android:id="@+id/seekBarVolume"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="6dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="16dp"
                 android:thumbTint="#e14f62"
                 android:progressTint="#e14f62"
                 android:max="100"
@@ -166,16 +162,17 @@
 
             <!-- Gradual Volume Increase -->
             <LinearLayout
+                android:id="@+id/layoutGradualVolume"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:elevation="1dp"
-                android:layout_marginTop="6dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="2dp"
                 android:background="@drawable/rounded_bg"
-                android:paddingVertical="8dp">
+                android:layout_marginBottom="10dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -190,7 +187,6 @@
                 <Switch
                     android:id="@+id/switchGradualVolume"
                     android:layout_width="wrap_content"
-                    android:checked="true"
                     android:layout_height="wrap_content"
                     android:trackTint="#9ba1ac"
                     android:thumbTint="#e14f62"/>
@@ -198,16 +194,17 @@
 
             <!-- Vibrate -->
             <LinearLayout
+                android:id="@+id/layoutVibrate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:elevation="1dp"
-                android:paddingStart="6dp"
-                android:paddingEnd="2dp"
-                android:layout_marginTop="6dp"
                 android:background="@drawable/rounded_bg"
-                android:paddingVertical="8dp">
+                android:layout_marginBottom="10dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -223,23 +220,23 @@
                     android:id="@+id/switchVibrate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"
                     android:trackTint="#9ba1ac"
                     android:thumbTint="#e14f62"/>
             </LinearLayout>
 
             <!-- Auto Dismiss -->
             <LinearLayout
+                android:id="@+id/layoutAutoDismiss"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:elevation="1dp"
-                android:paddingStart="6dp"
-                android:layout_marginTop="6dp"
-                android:paddingEnd="2dp"
                 android:background="@drawable/rounded_bg"
-                android:paddingVertical="8dp">
+                android:layout_marginBottom="10dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -249,8 +246,7 @@
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:textSize="16sp"
-                    android:textColor="@color/black"
-                    />
+                    android:textColor="@color/black"/>
 
                 <Switch
                     android:id="@+id/switchAutoDismiss"
