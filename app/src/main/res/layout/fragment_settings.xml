@@ -1,26 +1,261 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
-    tools:context=".model.MainActivity"
-    android:fitsSystemWindows="true">
+    android:orientation="vertical"
+    android:background="#F8F9FA">
 
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <!-- Toolbar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/settingsBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/red"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:background="#fefefe">
 
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/settings_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:layout_marginTop="5dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="5dp"
+            app:title="Settings"
+            app:titleTextColor="@color/black" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- GENERAL Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GENERAL"
+                android:textStyle="bold"
+                android:textColor="#525A69"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp"/>
+
+            <!-- Snooze Duration -->
+            <LinearLayout
+                android:id="@+id/layoutSnooze"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_bg"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:elevation="1dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:text="Snooze duration"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tvSnoozeDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingEnd="4dp"
+                    android:text="10 minutes"
+                    android:textColor="@android:color/black" />
+
+                <ImageView
+                    android:id="@+id/btnEditSnooze"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="Edit snooze duration"
+                    android:src="@drawable/ic_settings_trigger"
+                    app:tint="#8E8e93" />
+            </LinearLayout>
+
+            <!-- ALARM Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ALARM"
+                android:textStyle="bold"
+                android:textColor="#525A69"
+                android:paddingTop="18dp"
+                android:paddingBottom="4dp"/>
+
+            <!-- Alarm Sound -->
+            <LinearLayout
+                android:id="@+id/layoutAlarmSound"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:elevation="1dp"
+                android:background="@drawable/rounded_bg"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:text="Alarm sound"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/tvAlarmSound"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sunrise"
+                    android:textColor="@android:color/black"
+                    android:paddingEnd="4dp" />
+
+                <ImageView
+                    android:id="@+id/btnChangeSound"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_settings_trigger"
+                    app:tint="#8E8e93"
+                    android:contentDescription="Change alarm sound"/>
+            </LinearLayout>
+
+            <!-- Alarm Volume -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Alarm volume"
+                android:layout_marginTop="6dp"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp"/>
+
+            <SeekBar
+                android:id="@+id/seekBarVolume"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="16dp"
+                android:thumbTint="#e14f62"
+                android:progressTint="#e14f62"
+                android:max="100"
+                android:progress="50"/>
+
+            <!-- Gradual Volume Increase -->
+            <LinearLayout
+                android:id="@+id/layoutGradualVolume"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:elevation="1dp"
+                android:background="@drawable/rounded_bg"
+                android:layout_marginBottom="10dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Gradual volume increase"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"/>
+
+                <Switch
+                    android:id="@+id/switchGradualVolume"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="#9ba1ac"
+                    android:thumbTint="#e14f62"/>
+            </LinearLayout>
+
+            <!-- Vibrate -->
+            <LinearLayout
+                android:id="@+id/layoutVibrate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:elevation="1dp"
+                android:background="@drawable/rounded_bg"
+                android:layout_marginBottom="10dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:text="Vibrate"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"/>
+
+                <Switch
+                    android:id="@+id/switchVibrate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="#9ba1ac"
+                    android:thumbTint="#e14f62"/>
+            </LinearLayout>
+
+            <!-- Auto Dismiss -->
+            <LinearLayout
+                android:id="@+id/layoutAutoDismiss"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:elevation="1dp"
+                android:background="@drawable/rounded_bg"
+                android:layout_marginBottom="10dp"
+                android:paddingVertical="8dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="2dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Auto-dismiss"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"/>
+
+                <Switch
+                    android:id="@+id/switchAutoDismiss"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="#9ba1ac"
+                    android:thumbTint="#e14f62"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
