@@ -90,3 +90,22 @@ BuzzBuddy/
 - Structured local database design
 - State management using SharedPreferences
 - UI interaction with RecyclerView & swipe gestures
+
+---
+
+## 📸 Screenshots
+
+### 🏠 Home Screen
+![Home Screen](Screenshots/Homescreen.jpg)
+
+### ⏰ Active Alarm Screen
+![Active Alarm](Screenshots/ActiveAlarm.jpg)
+
+### ✏️ Set Alarm Title
+![Set Title](Screenshots/Set_title.jpg)
+
+### 🔄 Update Alarm
+![Update Alarm](Screenshots/Update.jpg)
+
+### 🗑 Swipe to Delete with Undo
+![Undo Delete](Screenshots/Undo_delete.jpg)
