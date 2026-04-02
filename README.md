@@ -58,21 +58,6 @@ The app demonstrates persistent alarm scheduling, reboot resilience, system serv
 
 ---
 
-## 📂 Project Structure (Simplified)
-
-BuzzBuddy/
-│
-├── app/
-│   ├── model/
-│   ├── room/
-│   ├── receiver/
-│   ├── fragments/
-│   └── activities/
-│
-└── README.md
-
----
-
 ## ▶️ How to Run
 
 1. Clone the repository
