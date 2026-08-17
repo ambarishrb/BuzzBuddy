@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
 
-@Database(entities = [SmartAlarm::class], version = 1)
+@Database(entities = [SmartAlarm::class], version = 3)
 abstract class SmartAlarmsDatabase : RoomDatabase() {
 
     // DAO function - camelCase
@@ -22,7 +22,10 @@ abstract class SmartAlarmsDatabase : RoomDatabase() {
                     context.applicationContext,
                     SmartAlarmsDatabase::class.java,
                     "smart_alarms"
-                ).build()
+                )
+                    // Older BuzzBuddy installs used a higher Room version. Recreate instead of crashing.
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
                 instance = tempInstance
                 tempInstance
             }
