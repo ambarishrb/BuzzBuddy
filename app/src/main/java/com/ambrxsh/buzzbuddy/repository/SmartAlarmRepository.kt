@@ -22,6 +22,10 @@ class SmartAlarmRepository(application: Application) {
         return smartAlarmDao.insert(smartAlarm)
     }
 
+    suspend fun restore(smartAlarm: SmartAlarm) {
+        smartAlarmDao.insert(smartAlarm)
+    }
+
     suspend fun update(smartAlarm: SmartAlarm) {
         smartAlarmDao.update(smartAlarm)
     }

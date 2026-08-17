@@ -7,129 +7,125 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.core.content.getSystemService
-
+import androidx.core.app.ServiceCompat
 import com.ambrxsh.buzzbuddy.AlarmActivity
+import com.ambrxsh.buzzbuddy.AlarmPlayer
+import com.ambrxsh.buzzbuddy.AlarmReceiver
 import com.ambrxsh.buzzbuddy.R
-import com.ambrxsh.buzzbuddy.fragments.ActivityAlarmFragment
-import com.ambrxsh.buzzbuddy.model.MainActivity
+import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
+import timber.log.Timber
 
 class BuzzBuddyAlarmForegroundService : Service() {
 
-    private val CHANNEL_ID = "alarm_channel"
-    override fun onCreate() {
-        super.onCreate()
-        createNotificationChannel()
+    companion object {
+        const val CHANNEL_ID = "alarm_ringing_channel"
+        const val NOTIFICATION_ID = 1001
+        const val ACTION_STOP = "com.ambrxsh.buzzbuddy.STOP_FOREGROUND_ALARM"
+
+        fun start(context: Context, alarmId: Int) {
+            val intent = Intent(context, BuzzBuddyAlarmForegroundService::class.java).apply {
+                putExtra(BuzzBuddyAlarmScheduler.EXTRA_ALARM_ID, alarmId)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, BuzzBuddyAlarmForegroundService::class.java))
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        println("OnStartCommand Called")
-        // Intent to open your Activity
-        val activityIntent = Intent(this, AlarmActivity::class.java).apply {
-//            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        if (intent?.action == ACTION_STOP) {
+            AlarmPlayer.stop()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
         }
 
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            activityIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val alarmId = intent?.getIntExtra(BuzzBuddyAlarmScheduler.EXTRA_ALARM_ID, -1) ?: -1
+        Timber.d("Starting ringing foreground service for alarmId=%s", alarmId)
 
-        // Build a notification
-        val notification: Notification = NotificationCompat.Builder(this, "alarm_channel")
-            .setContentTitle("Launching App")
-            .setContentText("Opening MainActivity…")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentIntent(pendingIntent)
-            .build()
-
-        println("Start Foreground Method")
-        try {
-            // Start foreground service
-            startForeground(1, createFullScreenNotification(this, 1))
-        } catch (ex: Exception) {
-            print(ex)
+        val notification = createFullScreenNotification(alarmId)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
         }
 
-        // Launch activity immediately (optional but works safely in foreground context)
-//        startActivity(activityIntent)
-
-//        stopSelf()
-        return START_NOT_STICKY
+        AlarmPlayer.start(this)
+        return START_STICKY
     }
 
-    private fun createFullScreenNotification(context: Context, alarmId: Int): Notification {
-        println("Creating Full Screen Notification ")
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private fun createFullScreenNotification(alarmId: Int): Notification {
+        createHighImportanceChannel()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Ringing Alarms",
-                NotificationManager.IMPORTANCE_HIGH // Importance must be HIGH
-            ).apply {
-                description = "Shows when an alarm is actively ringing."
-                // Optional: You can configure sound/vibration for the channel, but
-                // since you're managing it with AlarmPlayer, it's fine to leave it.
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        // This is the Intent that will launch your AlarmActivity
-        val activityIntent = Intent(context, AlarmActivity::class.java).apply {
-            // It's good practice to ensure a new task is created for the alarm screen
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val activityIntent = Intent(this, AlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("openAlarmFragment", true)
-            putExtra("alarmId", alarmId)
+            putExtra(BuzzBuddyAlarmScheduler.EXTRA_ALARM_ID, alarmId)
         }
         val activityPendingIntent = PendingIntent.getActivity(
-            context,
+            this,
             alarmId,
             activityIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // (Your existing stopIntent logic is correct)
-//        val stopIntent = Intent(context, AlarmReceiver::class.java).apply {
-//            action = AlarmReceiver.ACTION_STOP_ALARM
-//        }
-//        val stopPendingIntent = PendingIntent.getBroadcast(
-//            context,
-//            alarmId,
-//            stopIntent,
-//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-//        )
-        println("Full Screen Notification created")
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        val stopIntent = Intent(this, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_STOP_ALARM
+            putExtra(BuzzBuddyAlarmScheduler.EXTRA_ALARM_ID, alarmId)
+        }
+        val stopPendingIntent = PendingIntent.getBroadcast(
+            this,
+            alarmId + 50,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Alarm Ringing!")
-            .setContentText("Your alarm is going off.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // Priority must be HIGH
-            .setCategory(NotificationCompat.CATEGORY_ALARM) // Important category for alarms
-            .setOngoing(true)
+            .setContentTitle(getString(R.string.alarm_ringing_title))
+            .setContentText(getString(R.string.alarm_ringing_text))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            // THE MOST IMPORTANT PART:
-            .setFullScreenIntent(activityPendingIntent, true) // Pass true for high priority
-//            .addAction(android.R.drawable.ic_media_pause, "Stop", stopPendingIntent)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setContentIntent(activityPendingIntent)
+            .setFullScreenIntent(activityPendingIntent, true)
+            .addAction(android.R.drawable.ic_media_pause, getString(R.string.alarm_stop), stopPendingIntent)
             .build()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "alarm_channel",
-                "Foreground Service Channel",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+    private fun createHighImportanceChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.alarm_channel_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = getString(R.string.alarm_channel_description)
+            setBypassDnd(true)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 }

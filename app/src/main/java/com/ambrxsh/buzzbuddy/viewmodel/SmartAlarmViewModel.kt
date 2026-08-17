@@ -3,13 +3,11 @@ package com.ambrxsh.buzzbuddy.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
 import com.ambrxsh.buzzbuddy.repository.SmartAlarmRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 class SmartAlarmViewModel(application: Application) : AndroidViewModel(application) {
@@ -22,6 +20,12 @@ class SmartAlarmViewModel(application: Application) : AndroidViewModel(applicati
     suspend fun insertAndReturnId(smartAlarm: SmartAlarm): Long {
         return withContext(Dispatchers.IO) {
             repository.insertAndReturnId(smartAlarm)
+        }
+    }
+
+    suspend fun restore(smartAlarm: SmartAlarm) {
+        withContext(Dispatchers.IO) {
+            repository.restore(smartAlarm)
         }
     }
 

@@ -24,7 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="24dp"
-        android:text="Set Alarm"
+        android:text="@string/set_alarm_title"
         android:textColor="#212121"
         android:textSize="18sp"
         android:textStyle="bold" />
@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:autofillHints="name"
-        android:hint="Set Alarm Name"
+        android:hint="@string/alarm_name_hint"
         android:inputType="text"
         android:textColor="@color/black"
         android:backgroundTint="@color/black"
@@ -97,7 +97,7 @@
             android:layout_height="48dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:text="Cancel"
+            android:text="@string/cancel"
             android:textColor="@color/black"
             app:cornerRadius="24dp" />
 
@@ -109,7 +109,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:backgroundTint="#e14f62"
-            android:text="Set"
+            android:text="@string/set"
             android:textColor="@color/white"
             app:cornerRadius="24dp" />
     </LinearLayout>

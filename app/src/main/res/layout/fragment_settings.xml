@@ -21,7 +21,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="5dp"
-            app:title="Settings"
+            app:title="@string/settings_title"
             app:titleTextColor="@color/black" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -40,7 +40,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="GENERAL"
+                android:text="@string/settings_section_general"
                 android:textStyle="bold"
                 android:textColor="#525A69"
                 android:paddingTop="8dp"
@@ -67,7 +67,7 @@
                     android:layout_weight="1"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
-                    android:text="Snooze duration"
+                    android:text="@string/settings_snooze_duration"
                     android:textColor="@color/black"
                     android:textSize="16sp" />
 
@@ -76,14 +76,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingEnd="4dp"
-                    android:text="10 minutes"
+                    android:text="@string/settings_snooze_placeholder"
                     android:textColor="@android:color/black" />
 
                 <ImageView
                     android:id="@+id/btnEditSnooze"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:contentDescription="Edit snooze duration"
+                    android:contentDescription="@string/content_description_edit_snooze"
                     android:src="@drawable/ic_settings_trigger"
                     app:tint="#8E8e93" />
             </LinearLayout>
@@ -92,7 +92,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ALARM"
+                android:text="@string/settings_section_alarm"
                 android:textStyle="bold"
                 android:textColor="#525A69"
                 android:paddingTop="18dp"
@@ -117,7 +117,7 @@
                     android:layout_weight="1"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
-                    android:text="Alarm sound"
+                    android:text="@string/settings_alarm_sound"
                     android:textColor="@color/black"
                     android:textSize="16sp"/>
 
@@ -125,7 +125,7 @@
                     android:id="@+id/tvAlarmSound"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sunrise"
+                    android:text="@string/alarm_sound_sunrise"
                     android:textColor="@android:color/black"
                     android:paddingEnd="4dp" />
 
@@ -135,14 +135,14 @@
                     android:layout_height="24dp"
                     android:src="@drawable/ic_settings_trigger"
                     app:tint="#8E8e93"
-                    android:contentDescription="Change alarm sound"/>
+                    android:contentDescription="@string/content_description_change_sound"/>
             </LinearLayout>
 
             <!-- Alarm Volume -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Alarm volume"
+                android:text="@string/settings_alarm_volume"
                 android:layout_marginTop="6dp"
                 android:textSize="16sp"
                 android:textColor="@color/black"
@@ -178,7 +178,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Gradual volume increase"
+                    android:text="@string/settings_gradual_volume"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:textSize="16sp"
@@ -212,7 +212,7 @@
                     android:layout_weight="1"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
-                    android:text="Vibrate"
+                    android:text="@string/settings_vibrate"
                     android:textSize="16sp"
                     android:textColor="@color/black"/>
 
@@ -242,7 +242,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Auto-dismiss"
+                    android:text="@string/settings_auto_dismiss"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:textSize="16sp"

@@ -1,10 +1,6 @@
 package com.ambrxsh.buzzbuddy.fragments
 
 import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -24,11 +20,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.ambrxsh.buzzbuddy.AlarmReceiver
 import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.adapter.AlarmAdapter
 import com.ambrxsh.buzzbuddy.databinding.FragmentSetAlarmBinding
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
+import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
+import com.ambrxsh.buzzbuddy.utils.AlarmPermissionHelper
+import com.ambrxsh.buzzbuddy.utils.AlarmTimeFormat
+import com.ambrxsh.buzzbuddy.utils.SnoozeManager
+import com.ambrxsh.buzzbuddy.utils.setTwoDigitRange
 import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
@@ -39,11 +39,10 @@ class SetAlarmPage : Fragment() {
     private var _binding: FragmentSetAlarmBinding? = null
     private val binding get() = _binding!!
 
-
-//    this is touch comment
     private lateinit var smartAlarmViewModel: SmartAlarmViewModel
     private lateinit var alarmAdapter: AlarmAdapter
     private lateinit var alarmStatus: TextView
+    private lateinit var alarmScheduler: BuzzBuddyAlarmScheduler
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,7 +50,6 @@ class SetAlarmPage : Fragment() {
     ): View {
         _binding = FragmentSetAlarmBinding.inflate(inflater, container, false)
         return binding.root
-
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -59,39 +57,50 @@ class SetAlarmPage : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        alarmScheduler = BuzzBuddyAlarmScheduler(requireContext())
+        val snoozeManager = SnoozeManager.get(requireContext())
+
         requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.app_theme)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR // dark icons for light background
+            requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
         smartAlarmViewModel = ViewModelProvider(requireActivity())[SmartAlarmViewModel::class.java]
 
-        alarmAdapter = AlarmAdapter(object : AlarmAdapter.OnAlarmToggleListener {
+        alarmAdapter = AlarmAdapter(object : AlarmAdapter.Listener {
             override fun onAlarmToggled(alarm: SmartAlarm, isEnabled: Boolean) {
                 alarm.isEnabled = isEnabled
                 smartAlarmViewModel.update(alarm)
 
                 if (isEnabled) {
-                    cancelCurrentAlarm(alarm.alarmId)
-                    scheduleAlarm(alarm.alarmId, alarm.alarmTime_hour, alarm.alarmTime_minute)
+                    scheduleOrPrompt(alarm.alarmId, alarm.alarmTime_hour, alarm.alarmTime_minute)
                 } else {
-                    cancelCurrentAlarm(alarm.alarmId)
+                    alarmScheduler.cancel(alarm.alarmId)
+                    snoozeManager.clearSnooze(alarm.alarmId)
                 }
             }
-        })
 
-        setNextAlarmStatus();
+            override fun onCancelSnooze(alarm: SmartAlarm) {
+                snoozeManager.cancelSnooze(alarm.alarmId)
+                Toast.makeText(requireContext(), R.string.snooze_cancelled, Toast.LENGTH_SHORT).show()
+            }
+        })
 
         binding.recyclerViewAlarms.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewAlarms.adapter = alarmAdapter
 
+        alarmStatus = binding.tvNextAlarm
+
         smartAlarmViewModel.getAllAlarms().observe(viewLifecycleOwner) { alarms ->
             alarmAdapter.alarmList = alarms
             alarmAdapter.notifyDataSetChanged()
+            updateNextAlarmStatus(alarms)
         }
 
-        alarmStatus = binding.tvNextAlarm
-
+        snoozeManager.activeSnoozes.observe(viewLifecycleOwner) { snoozes ->
+            alarmAdapter.snoozeUntilById = snoozes
+            alarmAdapter.notifyDataSetChanged()
+        }
 
         binding.settingsIcon.setOnClickListener {
             val settingsFragment = SettingsFragment()
@@ -117,33 +126,27 @@ class SetAlarmPage : Fragment() {
                 val position = viewHolder.adapterPosition
                 val alarmToDelete = alarmAdapter.returnItemGivenPosition(position)
 
-                // Cancel scheduled alarm
-                cancelCurrentAlarm(alarmToDelete.alarmId)
-
-                // Delete from database via ViewModel
+                alarmScheduler.cancel(alarmToDelete.alarmId)
+                snoozeManager.clearSnooze(alarmToDelete.alarmId)
                 smartAlarmViewModel.delete(alarmToDelete)
 
-                // Remove from adapter list immediately
                 val currentList = alarmAdapter.alarmList.toMutableList()
                 currentList.removeAt(position)
                 alarmAdapter.alarmList = currentList
                 alarmAdapter.notifyItemRemoved(position)
 
-                // Optional: Undo
-                Snackbar.make(binding.root, "Alarm deleted", Snackbar.LENGTH_LONG)
-                    .setAction("Undo") {
+                Snackbar.make(binding.root, R.string.alarm_deleted, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.undo) {
                         lifecycleScope.launch {
-                            val newId = smartAlarmViewModel.insertAndReturnId(alarmToDelete).toInt()
-                            alarmToDelete.alarmId = newId
+                            smartAlarmViewModel.restore(alarmToDelete)
                             if (alarmToDelete.isEnabled) {
-                                scheduleAlarm(
+                                scheduleOrPrompt(
                                     alarmToDelete.alarmId,
                                     alarmToDelete.alarmTime_hour,
                                     alarmToDelete.alarmTime_minute
                                 )
                             }
 
-                            // Add back to adapter list
                             val updatedList = alarmAdapter.alarmList.toMutableList()
                             updatedList.add(position, alarmToDelete)
                             alarmAdapter.alarmList = updatedList
@@ -154,12 +157,10 @@ class SetAlarmPage : Fragment() {
         }
 
         ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(binding.recyclerViewAlarms)
-
-
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    @SuppressLint("SetTextI18n", "DefaultLocale")
+    @SuppressLint("DefaultLocale")
     private fun showCustomDialog() {
         val builder = android.app.AlertDialog.Builder(requireContext())
         val dialogView = layoutInflater.inflate(R.layout.custom_dialog_layout, null)
@@ -167,18 +168,16 @@ class SetAlarmPage : Fragment() {
         val dialog = builder.create()
 
         val hourPicker = dialogView.findViewById<NumberPicker>(R.id.hour_picker).apply {
-            minValue = 0
-            maxValue = 23
+            setTwoDigitRange(0, 23)
             setTextColor("#212121".toColorInt())
         }
 
         val minutePicker = dialogView.findViewById<NumberPicker>(R.id.minute_picker).apply {
-            minValue = 0
-            maxValue = 59
+            setTwoDigitRange(0, 59)
             setTextColor("#212121".toColorInt())
         }
 
-        val alarm_title_et = dialogView.findViewById<EditText>(R.id.alarm_title)
+        val alarmTitleEt = dialogView.findViewById<EditText>(R.id.alarm_title)
 
         dialogView.findViewById<Button>(R.id.cancel_button).setOnClickListener {
             dialog.dismiss()
@@ -191,13 +190,13 @@ class SetAlarmPage : Fragment() {
             lifecycleScope.launch {
                 val existingAlarm = smartAlarmViewModel.getAlarmByTime(selectedHour, selectedMinute)
                 if (existingAlarm != null) {
-                    Toast.makeText(requireContext(), "Alarm already set for this time!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), R.string.alarm_already_set, Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                     return@launch
                 }
 
                 val newAlarm = SmartAlarm(
-                    alarmTitle = alarm_title_et.text.toString(),
+                    alarmTitle = alarmTitleEt.text.toString(),
                     alarmTime_hour = selectedHour,
                     alarmTime_minute = selectedMinute,
                     isEnabled = true,
@@ -207,15 +206,7 @@ class SetAlarmPage : Fragment() {
                 newAlarm.alarmId = generatedId
                 smartAlarmViewModel.update(newAlarm)
 
-                scheduleAlarm(newAlarm.alarmId, selectedHour, selectedMinute)
-
-                val hour12 = if (selectedHour % 12 == 0) 12 else selectedHour % 12
-                val amPm = if (selectedHour >= 12) "PM" else "AM"
-                alarmStatus.text = "Next alarm at ${String.format("%02d:%02d %s", hour12, selectedMinute, amPm)}"
-                alarmStatus.setTextColor("#8E8E93".toColorInt())
-                alarmStatus.visibility = View.VISIBLE
-
-                setNextAlarmStatus();
+                scheduleOrPrompt(newAlarm.alarmId, selectedHour, selectedMinute)
                 dialog.dismiss()
             }
         }
@@ -223,82 +214,40 @@ class SetAlarmPage : Fragment() {
         dialog.show()
     }
 
-    /**
-     * fetch all the alarms and figure out the next alarm and update the alarm status accordingly
-     */
-    private fun setNextAlarmStatus() {
-        smartAlarmViewModel.getAllAlarms().observe(viewLifecycleOwner) { alarms ->
-            // Filter only enabled alarms
-            val enabledAlarms = alarms.filter { it.isEnabled }
+    private fun updateNextAlarmStatus(alarms: List<SmartAlarm>) {
+        val enabledAlarms = alarms.filter { it.isEnabled }
 
-            if (enabledAlarms.isEmpty()) {
-                alarmStatus.text = "No upcoming alarms"
-                alarmStatus.setTextColor("#8E8E93".toColorInt())
-                return@observe
-            }
+        if (enabledAlarms.isEmpty()) {
+            alarmStatus.text = getString(R.string.no_upcoming_alarms)
+            alarmStatus.setTextColor("#8E8E93".toColorInt())
+            return
+        }
 
-            val now = Calendar.getInstance()
-            val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+        val now = Calendar.getInstance()
+        val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
 
-            // Find closest upcoming alarm (today or tomorrow)
-            val nextAlarm = enabledAlarms.minByOrNull { alarm ->
-                val alarmMinutes = alarm.alarmTime_hour * 60 + alarm.alarmTime_minute
-                val diff = alarmMinutes - nowMinutes
-                if (diff >= 0) diff else diff + 24 * 60  // if already passed today → add 24h
-            }
+        val nextAlarm = enabledAlarms.minByOrNull { alarm ->
+            val alarmMinutes = alarm.alarmTime_hour * 60 + alarm.alarmTime_minute
+            val diff = alarmMinutes - nowMinutes
+            if (diff >= 0) diff else diff + 24 * 60
+        }
 
-            if (nextAlarm != null) {
-                val hour12 = if (nextAlarm.alarmTime_hour % 12 == 0) 12 else nextAlarm.alarmTime_hour % 12
-                val amPm = if (nextAlarm.alarmTime_hour >= 12) "PM" else "AM"
-
-                alarmStatus.text = "Next alarm at ${
-                    String.format("%02d:%02d %s", hour12, nextAlarm.alarmTime_minute, amPm)
-                }"
-                alarmStatus.setTextColor("#8E8E93".toColorInt())
-            } else {
-                alarmStatus.text = "No upcoming alarms"
-                alarmStatus.setTextColor("#8E8E93".toColorInt())
-            }
+        if (nextAlarm != null) {
+            alarmStatus.text = getString(
+                R.string.next_alarm_at,
+                AlarmTimeFormat.format12Hour(requireContext(), nextAlarm.alarmTime_hour, nextAlarm.alarmTime_minute)
+            )
+            alarmStatus.setTextColor("#8E8E93".toColorInt())
+        } else {
+            alarmStatus.text = getString(R.string.no_upcoming_alarms)
+            alarmStatus.setTextColor("#8E8E93".toColorInt())
         }
     }
 
-
-
-
-
-    @SuppressLint("ScheduleExactAlarm")
-    private fun scheduleAlarm(alarmId: Int, hour: Int, minute: Int) {
-        val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_MONTH, 1)
+    private fun scheduleOrPrompt(alarmId: Int, hour: Int, minute: Int) {
+        if (!alarmScheduler.schedule(alarmId, hour, minute)) {
+            AlarmPermissionHelper.requestExactAlarmPermission(requireActivity())
         }
-
-        val intent = Intent(requireContext(), AlarmReceiver::class.java).apply {
-            putExtra("alarmId", alarmId)
-        }
-
-        val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        val pendingIntent = PendingIntent.getBroadcast(requireContext(), alarmId, intent, piFlags)
-
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-    }
-
-    private fun cancelCurrentAlarm(alarmId: Int) {
-        val intent = Intent(requireContext(), AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            requireContext(),
-            alarmId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel()
     }
 
     override fun onDestroyView() {

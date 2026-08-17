@@ -84,8 +84,8 @@ class SettingsFragment : Fragment() {
         switchGradualVolume.isChecked = settings.gradualVolume
         switchVibrate.isChecked = settings.vibrate
         switchAutoDismiss.isChecked = settings.autoDismiss
-        tvSnoozeDuration.text = "${settings.snoozeDuration} minutes"
-        tvAlarmSound.text = settings.alarmSound
+        tvSnoozeDuration.text = getString(R.string.snooze_duration_minutes, settings.snoozeDuration)
+        tvAlarmSound.text = displayNameForSound(settings.alarmSound)
 
         // SeekBar listener
         seekBarVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -132,15 +132,15 @@ class SettingsFragment : Fragment() {
             }
 
             val dialog = AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
-                .setTitle("Snooze Duration (min)")
+                .setTitle(R.string.snooze_duration_title)
                 .setView(layout)
-                .setPositiveButton("OK") { d, _ ->
+                .setPositiveButton(R.string.ok) { d, _ ->
                     settings.snoozeDuration = numberPicker.value
-                    tvSnoozeDuration.text = "${numberPicker.value} minutes"
+                    tvSnoozeDuration.text = getString(R.string.snooze_duration_minutes, numberPicker.value)
                     settingsManager.saveSettings(settings)
                     d.dismiss()
                 }
-                .setNegativeButton("Cancel") { d, _ -> d.dismiss() }
+                .setNegativeButton(R.string.cancel) { d, _ -> d.dismiss() }
                 .create()
 
             dialog.show()
@@ -153,13 +153,24 @@ class SettingsFragment : Fragment() {
 
         // Alarm sound toggle on row or button
         val alarmSoundClick = View.OnClickListener {
-            val newSound = if (settings.alarmSound == "Sunrise") "Beep" else "Sunrise"
+            val sunrise = getString(R.string.alarm_sound_sunrise)
+            val beep = getString(R.string.alarm_sound_beep)
+            val newSound = if (settings.alarmSound == beep) sunrise else beep
             settings.alarmSound = newSound
-            tvAlarmSound.text = newSound
+            tvAlarmSound.text = displayNameForSound(newSound)
             settingsManager.saveSettings(settings)
         }
 
         layoutAlarmSound.setOnClickListener(alarmSoundClick)
         btnChangeSound.setOnClickListener(alarmSoundClick)
+    }
+
+    private fun displayNameForSound(stored: String): String {
+        val beep = getString(R.string.alarm_sound_beep)
+        return if (stored == beep || stored.equals("Beep", ignoreCase = true)) {
+            getString(R.string.alarm_sound_beep)
+        } else {
+            getString(R.string.alarm_sound_sunrise)
+        }
     }
 }
