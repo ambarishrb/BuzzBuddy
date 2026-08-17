@@ -3,8 +3,6 @@
 BuzzBuddy is a feature-rich alarm management application built using Kotlin and XML-based UI.
 The app demonstrates persistent alarm scheduling, reboot resilience, system service integration, and structured local data storage.
 
-On this `backend` branch you sign in first. After login, the alarm experience matches `main`.
-
 ---
 
 ## 🚀 Features
@@ -99,29 +97,9 @@ On this `backend` branch you sign in first. After login, the alarm experience ma
 
 ---
 
-## Backend (this branch)
+## Backend
 
-This branch is the same finished Android alarm app as `main`, plus login and FastAPI sync. After you sign in, the home screen, snooze, lock-screen ringing, and reboot reschedule match `main`.
-
-```
-Android (Retrofit + Room)  →  FastAPI  →  SQLite
-```
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/register` | No | `{ name, email, password }` (password min 6 characters) |
-| POST | `/api/login` | No | `{ email, password }` → `{ access_token, refresh_token, token }` |
-| POST | `/api/auth/refresh` | Refresh JWT | Rotate tokens |
-| POST | `/api/auth/logout` | Yes | Revoke refresh token |
-| POST | `/api/auth/password-reset/request` | No | Always 200; code is emailed or logged |
-| POST | `/api/auth/password-reset/confirm` | No | `{ email, code, new_password }` |
-| GET | `/api/account/me` | Yes | Current user `{ id, name, email }` |
-| PUT | `/api/account/password` | Yes | Change password |
-| DELETE | `/api/account` | Yes | Delete user + alarms |
-| GET/POST | `/api/alarms` | Yes | List / create |
-| PUT/DELETE | `/api/alarms/{id}` | Yes | Update / delete (404 if not owner) |
-
-Errors: `{ "error": "Human-readable message" }`
+This branch adds login and alarm sync. The API is FastAPI + SQLite. The Android app talks to it over JWT.
 
 ### Run the API
 
@@ -134,25 +112,23 @@ cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8080
 ```
 
-- Health: http://127.0.0.1:8080/health
-- Docs: http://127.0.0.1:8080/docs
+Docs: http://127.0.0.1:8080/docs
 
-Password-reset codes print in that terminal when `SMTP_HOST` is empty.
+Set `BASE_URL` in `app/build.gradle.kts` to `http://10.0.2.2:8080/` for the emulator, or `http://YOUR_LAN_IP:8080/` for a phone on the same Wi‑Fi. Then register and log in.
 
-### Run the Android app
+### Endpoints
 
-1. Keep uvicorn running (`--host 0.0.0.0 --port 8080`).
-2. `BASE_URL` in `app/build.gradle.kts`:
-   - Emulator: `http://10.0.2.2:8080/`
-   - Physical phone: `http://YOUR_MAC_LAN_IP:8080/` (example: `http://192.168.1.39:8080/`)
-3. Gradle JDK must be **17** (not 25). Homebrew: `/opt/homebrew/opt/openjdk@17`
-4. Register first (password at least 6 characters), then log in.
-5. Home screen after login is the same alarm list as `main`.
-
-```bash
-export JAVA_HOME=/opt/homebrew/opt/openjdk@17
-./gradlew :app:assembleDebug
-```
-
-Do not commit `.env`, keystores, or `Buzz_Buddy.txt`.
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/register` | No |
+| POST | `/api/login` | No |
+| POST | `/api/auth/refresh` | Refresh token |
+| POST | `/api/auth/logout` | Yes |
+| POST | `/api/auth/password-reset/request` | No |
+| POST | `/api/auth/password-reset/confirm` | No |
+| GET | `/api/account/me` | Yes |
+| PUT | `/api/account/password` | Yes |
+| DELETE | `/api/account` | Yes |
+| GET, POST | `/api/alarms` | Yes |
+| PUT, DELETE | `/api/alarms/{id}` | Yes |
 
