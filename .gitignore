@@ -23,3 +23,6 @@ local.properties
 .idea/runConfigurations.xml
 .idea/vcs.xml
 app/release/app-release.aab
+Screenshots/
+BuzzBuddy_Improvement_Plan.md
+MANUAL_TESTING.md
