@@ -47,5 +47,11 @@ __pycache__/
 
 # Internal planning / agent tooling (not for public showcase)
 .claude/
+.cursor/
+.idea/
 _bmad/
 _bmad-output/
+docs/
+**/prd.md
+**/*testing-guide*
+**/*manual-test*
