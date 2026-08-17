@@ -16,8 +16,8 @@ android {
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // Physical device on the same Wi-Fi. Use http://10.0.2.2:8080/ for the emulator.
-        buildConfigField("String", "BASE_URL", "\"http://192.168.1.39:8080/\"")
+        // Emulator: 10.0.2.2. Physical device: your machine LAN IP, e.g. http://192.168.1.39:8080/
+        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
     }
 
     buildFeatures {
