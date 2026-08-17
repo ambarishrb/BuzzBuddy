@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:id="@+id/alarmCard"
@@ -36,7 +37,7 @@
                     android:id="@+id/alarmTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="06:00"
+                    tools:text="06:00"
                     android:textColor="#151821"
                     android:textSize="32sp"
                     android:textStyle="bold" />
@@ -46,7 +47,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="AM"
+                    android:text="@string/am"
                     android:textColor="#5b6475"
                     android:textSize="16sp"
                     android:baselineAligned="true" />
@@ -58,7 +59,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Wake up"
+                tools:text="Wake up"
                 android:textColor="#5b6475"
                 android:paddingLeft="20dp"
                 android:paddingBottom="5dp"
@@ -66,6 +67,36 @@
                 android:ellipsize="end"
                 android:textSize="15sp"
                 android:textStyle="normal" />
+
+            <LinearLayout
+                android:id="@+id/snoozeRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingLeft="20dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvSnoozeStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#e14f62"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnStopSnooze"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="@string/stop_snooze"
+                    android:textColor="#e14f62"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
         </LinearLayout>
 

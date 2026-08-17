@@ -5,7 +5,9 @@
     <color name="red">#F20707</color>
     <color name="grey">#1B1B1B</color>
     <color name="crimson">#C1132B</color>
-    <color name="app_theme">#FF4C6D</color>
+    <color name="app_theme">#e14f62</color>
+    <color name="page_background">#F8F9FA</color>
+    <color name="secondary_text">#8E8E93</color>
     <color name="switch_track">#FF3B30</color>
     <color name="your_background_color">#FAFAFA</color>
     <color name="your_text_color">#212121</color>

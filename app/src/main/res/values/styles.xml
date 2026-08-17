@@ -24,4 +24,21 @@
         <item name="colorAccent">#e14f62</item>
     </style>
 
+    <style name="Widget.BuzzBuddy.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/white</item>
+        <item name="boxStrokeColor">@color/app_theme</item>
+        <item name="hintTextColor">@color/secondary_text</item>
+        <item name="android:textColorHint">@color/secondary_text</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+    </style>
+
+    <style name="Widget.BuzzBuddy.TextInputEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@color/your_text_color</item>
+        <item name="android:textColorHint">@color/secondary_text</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
 </resources>

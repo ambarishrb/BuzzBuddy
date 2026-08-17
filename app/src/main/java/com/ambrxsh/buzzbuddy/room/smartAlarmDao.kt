@@ -28,4 +28,7 @@ interface smartAlarmDao {
     // Synchronous function needed for BootReceiver
     @Query("SELECT * FROM smart_alarms")
     fun getAllAlarmsSync(): List<SmartAlarm>
+
+    @Query("SELECT * FROM smart_alarms WHERE serverId = :serverId LIMIT 1")
+    suspend fun getByServerId(serverId: Int): SmartAlarm?
 }

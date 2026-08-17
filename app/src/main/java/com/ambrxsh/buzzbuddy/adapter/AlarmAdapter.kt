@@ -2,21 +2,26 @@ package com.ambrxsh.buzzbuddy.adapter
 
 import android.content.Intent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ambrxsh.buzzbuddy.EditAlarmActivity
+import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.databinding.AlarmItemBinding
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
+import com.ambrxsh.buzzbuddy.utils.AlarmTimeFormat
 
 class AlarmAdapter(
-    private val listener: OnAlarmToggleListener
+    private val listener: Listener
 ) : RecyclerView.Adapter<AlarmAdapter.SmartAlarmViewHolder>() {
 
-    interface OnAlarmToggleListener {
+    interface Listener {
         fun onAlarmToggled(alarm: SmartAlarm, isEnabled: Boolean)
+        fun onCancelSnooze(alarm: SmartAlarm)
     }
 
     var alarmList: List<SmartAlarm> = ArrayList()
+    var snoozeUntilById: Map<Int, Long> = emptyMap()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartAlarmViewHolder {
         val binding = AlarmItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -25,20 +30,28 @@ class AlarmAdapter(
 
     override fun onBindViewHolder(holder: SmartAlarmViewHolder, position: Int) {
         val smartAlarm = alarmList[position]
-
-
-
-        // Convert 24h -> 12h format
         val hour24 = smartAlarm.alarmTime_hour
         val minute = smartAlarm.alarmTime_minute
-        val amPm = if (hour24 >= 12) "PM" else "AM"
-        val hour12 = if (hour24 % 12 == 0) 12 else hour24 % 12
-        val alarmTimeString = String.format("%02d:%02d", hour12, minute)
+        val context = holder.binding.root.context
+        val alarmTimeString = AlarmTimeFormat.format12HourClock(context, hour24, minute)
+        val snoozeUntil = snoozeUntilById[smartAlarm.alarmId]
 
         with(holder.binding) {
             alarmTime.text = alarmTimeString
-            amPmText.text = amPm
+            amPmText.text = AlarmTimeFormat.amPm(context, hour24)
             alarmTitle.text = smartAlarm.alarmTitle
+
+            if (snoozeUntil != null && snoozeUntil > System.currentTimeMillis()) {
+                snoozeRow.visibility = View.VISIBLE
+                tvSnoozeStatus.text = root.context.getString(
+                    R.string.snooze_until,
+                    formatTriggerTime(root.context, snoozeUntil)
+                )
+                btnStopSnooze.setOnClickListener { listener.onCancelSnooze(smartAlarm) }
+            } else {
+                snoozeRow.visibility = View.GONE
+                btnStopSnooze.setOnClickListener(null)
+            }
 
             alarmCard.setOnClickListener {
                 val intent = Intent(it.context, EditAlarmActivity::class.java)
@@ -46,7 +59,6 @@ class AlarmAdapter(
                 it.context.startActivity(intent)
             }
 
-            // Prevent toggle firing during recycling
             alarmSwitch.setOnCheckedChangeListener(null)
             alarmSwitch.isChecked = smartAlarm.isEnabled
             alarmSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -54,9 +66,14 @@ class AlarmAdapter(
             }
         }
     }
-    fun returnItemGivenPosition(position: Int) : SmartAlarm { return alarmList[position] }
+
+    fun returnItemGivenPosition(position: Int): SmartAlarm = alarmList[position]
 
     override fun getItemCount(): Int = alarmList.size
+
+    private fun formatTriggerTime(context: android.content.Context, triggerAt: Long): String {
+        return AlarmTimeFormat.formatMillis(context, triggerAt)
+    }
 
     class SmartAlarmViewHolder(val binding: AlarmItemBinding) :
         RecyclerView.ViewHolder(binding.root)

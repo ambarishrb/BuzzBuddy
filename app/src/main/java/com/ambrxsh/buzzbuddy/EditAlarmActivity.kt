@@ -1,32 +1,27 @@
 package com.ambrxsh.buzzbuddy
 
 import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Intent
-import android.graphics.Color
 import android.graphics.Paint
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
 import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
+import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
+import com.ambrxsh.buzzbuddy.utils.AlarmPermissionHelper
+import com.ambrxsh.buzzbuddy.utils.setTwoDigitRange
 import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
-import kotlinx.coroutines.launch
-import java.util.Calendar
 import com.google.android.material.appbar.MaterialToolbar
-import androidx.core.net.toUri
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 
 class EditAlarmActivity : AppCompatActivity() {
@@ -60,6 +55,7 @@ class EditAlarmActivity : AppCompatActivity() {
 
 
         smartAlarmViewModel = ViewModelProvider(this)[SmartAlarmViewModel::class.java]
+        val alarmScheduler = BuzzBuddyAlarmScheduler(this)
 
         alarmId = intent.getIntExtra("alarmId", -1)
         if (alarmId == -1) finish()
@@ -74,21 +70,13 @@ class EditAlarmActivity : AppCompatActivity() {
         smartAlarmViewModel.getAllAlarms().observe(this) { alarms ->
             alarm = alarms.find { it.alarmId == alarmId } ?: return@observe
 
-            hourPicker.minValue = 0
-            hourPicker.maxValue = 23
-
+            hourPicker.setTwoDigitRange(0, 23)
             hourPicker.value = alarm.alarmTime_hour
-            hourPicker.apply {
-                setTextColor("#212121".toColorInt())
-            }
+            hourPicker.setTextColor("#212121".toColorInt())
 
-            minutePicker.minValue = 0
-            minutePicker.maxValue = 59
-
+            minutePicker.setTwoDigitRange(0, 59)
             minutePicker.value = alarm.alarmTime_minute
-            minutePicker.apply {
-                setTextColor("#212121".toColorInt())
-            }
+            minutePicker.setTextColor("#212121".toColorInt())
 
             alarmTitleText.text = alarm.alarmTitle
         }
@@ -101,10 +89,10 @@ class EditAlarmActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 smartAlarmViewModel.update(alarm)
-
-                // Cancel old alarm (if any) and schedule updated one
-                cancelCurrentAlarm(alarm.alarmId)
-                scheduleAlarm(alarm.alarmId, alarm.alarmTime_hour, alarm.alarmTime_minute)
+                alarmScheduler.cancel(alarm.alarmId)
+                if (!alarmScheduler.schedule(alarm.alarmId, alarm.alarmTime_hour, alarm.alarmTime_minute)) {
+                    AlarmPermissionHelper.requestExactAlarmPermission(this@EditAlarmActivity)
+                }
             }
             finish()
         }
@@ -115,68 +103,6 @@ class EditAlarmActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkAndRequestFullScreenPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // Android 14+
-            val notificationManager = NotificationManagerCompat.from(this)
-            // canUseFullScreenIntent() checks if your app has the special permission
-            if (!notificationManager.canUseFullScreenIntent()) {
-                // Permission not granted, guide the user to settings
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                    "package:$packageName".toUri()
-                )
-                startActivity(intent)
-                // You should show a dialog explaining WHY you need this permission first.
-            }
-        }
-        // For Android 10-13, the permission is granted at install time,
-        // but some OEMs still add their own restrictions.
-    }
-    @SuppressLint("ScheduleExactAlarm")
-    private fun scheduleAlarm(alarmId: Int, hour: Int, minute: Int) {
-        checkAndRequestFullScreenPermission();
-        val alarmManager =
-            getSystemService(ALARM_SERVICE) as AlarmManager
-
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_MONTH, 1)
-        }
-
-        val intent = Intent(this, AlarmReceiver::class.java).apply {
-            putExtra("alarmId", alarmId)
-        }
-
-        val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            alarmId,
-            intent,
-            piFlags
-        )
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            cal.timeInMillis,
-            pendingIntent
-        )
-    }
-
-    private fun cancelCurrentAlarm(alarmId: Int) {
-        val intent = Intent(this, AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            alarmId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel()
-    }
     @SuppressLint("SoonBlockedPrivateApi")
 
     fun NumberPicker.setTextColorCompat(color: Int) {
@@ -196,7 +122,7 @@ class EditAlarmActivity : AppCompatActivity() {
             // Force redraw
             invalidate()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "Could not set NumberPicker text color")
         }
     }
 

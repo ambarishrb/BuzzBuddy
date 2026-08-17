@@ -1,17 +1,15 @@
 package com.ambrxsh.buzzbuddy.model
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.databinding.ActivityMainBinding
 import com.ambrxsh.buzzbuddy.fragments.ActivityAlarmFragment
 import com.ambrxsh.buzzbuddy.fragments.SetAlarmPage
+import com.ambrxsh.buzzbuddy.utils.AlarmPermissionHelper
 import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
 
 class MainActivity : AppCompatActivity() {
@@ -27,25 +25,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         smartAlarmViewModel = ViewModelProvider(this)[SmartAlarmViewModel::class.java]
-        smartAlarmViewModel.getAllAlarms().observe(this, Observer { images ->
-
-        })
-
-
-        // --- Ensure activity shows on top & screen turns on ---
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        } else {
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            )
-        }
+        AlarmPermissionHelper.requestStartupPermissions(this)
 
         enableEdgeToEdge()
-//        setContentView(R.layout.activity_main)
 
         // Decide which fragment to show at launch
         if (intent.getBooleanExtra("openAlarmFragment", false)) {

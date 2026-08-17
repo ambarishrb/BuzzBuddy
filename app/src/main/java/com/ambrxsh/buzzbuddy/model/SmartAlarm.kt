@@ -1,4 +1,3 @@
-// file: com/example/smartalarm/model/SmartAlarm.kt
 package com.ambrxsh.buzzbuddy.model
 
 import androidx.room.Entity
@@ -11,5 +10,6 @@ data class SmartAlarm(
     var alarmTime_minute: Int,
     var isEnabled: Boolean = true,
     @PrimaryKey(autoGenerate = true)
-    var alarmId: Int = 0
+    var alarmId: Int = 0,
+    var serverId: Int? = null
 )

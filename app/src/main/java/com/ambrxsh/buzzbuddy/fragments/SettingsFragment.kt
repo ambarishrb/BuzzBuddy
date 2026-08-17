@@ -1,18 +1,31 @@
 package com.ambrxsh.buzzbuddy.fragments
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.ambrxsh.buzzbuddy.ActivityPreLogin
+import com.ambrxsh.buzzbuddy.BuzzBuddyApp
 import com.ambrxsh.buzzbuddy.R
+import com.ambrxsh.buzzbuddy.clients.AuthClientService
+import com.ambrxsh.buzzbuddy.dtos.ChangePasswordRequestDto
+import com.ambrxsh.buzzbuddy.dtos.LogoutRequestDto
 import com.ambrxsh.buzzbuddy.model.SettingsData
+import com.ambrxsh.buzzbuddy.utils.SessionStore
 import com.ambrxsh.buzzbuddy.utils.SettingsManager
+import com.ambrxsh.buzzbuddy.utils.setTwoDigitRange
 import com.google.android.material.appbar.MaterialToolbar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
 
@@ -84,8 +97,8 @@ class SettingsFragment : Fragment() {
         switchGradualVolume.isChecked = settings.gradualVolume
         switchVibrate.isChecked = settings.vibrate
         switchAutoDismiss.isChecked = settings.autoDismiss
-        tvSnoozeDuration.text = "${settings.snoozeDuration} minutes"
-        tvAlarmSound.text = settings.alarmSound
+        tvSnoozeDuration.text = getString(R.string.snooze_duration_minutes, settings.snoozeDuration)
+        tvAlarmSound.text = displayNameForSound(settings.alarmSound)
 
         // SeekBar listener
         seekBarVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -120,9 +133,8 @@ class SettingsFragment : Fragment() {
         val snoozeClickListener = View.OnClickListener {
             val numberPicker = NumberPicker(requireContext()).apply {
                 setTextColor("#212121".toColorInt())
-                minValue = 1
-                maxValue = 60
-                value = settings.snoozeDuration
+                setTwoDigitRange(1, 60)
+                value = settings.snoozeDuration.coerceIn(1, 60)
             }
 
             val layout = LinearLayout(requireContext()).apply {
@@ -132,15 +144,15 @@ class SettingsFragment : Fragment() {
             }
 
             val dialog = AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
-                .setTitle("Snooze Duration (min)")
+                .setTitle(R.string.snooze_duration_title)
                 .setView(layout)
-                .setPositiveButton("OK") { d, _ ->
+                .setPositiveButton(R.string.ok) { d, _ ->
                     settings.snoozeDuration = numberPicker.value
-                    tvSnoozeDuration.text = "${numberPicker.value} minutes"
+                    tvSnoozeDuration.text = getString(R.string.snooze_duration_minutes, numberPicker.value)
                     settingsManager.saveSettings(settings)
                     d.dismiss()
                 }
-                .setNegativeButton("Cancel") { d, _ -> d.dismiss() }
+                .setNegativeButton(R.string.cancel) { d, _ -> d.dismiss() }
                 .create()
 
             dialog.show()
@@ -153,13 +165,175 @@ class SettingsFragment : Fragment() {
 
         // Alarm sound toggle on row or button
         val alarmSoundClick = View.OnClickListener {
-            val newSound = if (settings.alarmSound == "Sunrise") "Beep" else "Sunrise"
+            val sunrise = getString(R.string.alarm_sound_sunrise)
+            val beep = getString(R.string.alarm_sound_beep)
+            val newSound = if (settings.alarmSound == beep) sunrise else beep
             settings.alarmSound = newSound
-            tvAlarmSound.text = newSound
+            tvAlarmSound.text = displayNameForSound(newSound)
             settingsManager.saveSettings(settings)
         }
 
         layoutAlarmSound.setOnClickListener(alarmSoundClick)
         btnChangeSound.setOnClickListener(alarmSoundClick)
+
+        bindAccountSection(view)
+    }
+
+    private fun bindAccountSection(view: View) {
+        val nameView = view.findViewById<TextView>(R.id.tvAccountName)
+        val emailView = view.findViewById<TextView>(R.id.tvAccountEmail)
+        val session = SessionStore(requireContext())
+        renderProfile(nameView, emailView, session)
+
+        view.findViewById<View>(R.id.layoutChangePassword).setOnClickListener {
+            showChangePasswordDialog()
+        }
+        view.findViewById<View>(R.id.layoutLogout).setOnClickListener {
+            AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
+                .setTitle(R.string.log_out)
+                .setMessage(R.string.logout_confirm)
+                .setPositiveButton(R.string.log_out) { _, _ -> performLogout() }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+        view.findViewById<View>(R.id.layoutDeleteAccount).setOnClickListener {
+            AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
+                .setTitle(R.string.delete_account)
+                .setMessage(R.string.delete_account_confirm)
+                .setPositiveButton(android.R.string.ok) { _, _ -> deleteAccount() }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+
+        val service = authService() ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val user = withContext(Dispatchers.IO) { service.me() }
+                session.saveProfile(user.name, user.email)
+                renderProfile(nameView, emailView, session)
+            } catch (e: Exception) {
+                Log.w(TAG, "load profile failed", e)
+            }
+        }
+    }
+
+    private fun renderProfile(nameView: TextView, emailView: TextView, session: SessionStore) {
+        val name = session.getName().orEmpty()
+        val email = session.getEmail().orEmpty()
+        nameView.text = name.ifBlank { getString(R.string.account_name_placeholder) }
+        emailView.text = email.ifBlank { getString(R.string.account_email_placeholder) }
+    }
+
+    private fun authService(): AuthClientService? {
+        val app = requireActivity().application as? BuzzBuddyApp
+        if (app == null) {
+            Toast.makeText(requireContext(), R.string.error_app_not_initialized, Toast.LENGTH_SHORT).show()
+            return null
+        }
+        return app.retrofit.create(AuthClientService::class.java)
+    }
+
+    private fun showChangePasswordDialog() {
+        val currentInput = EditText(requireContext()).apply {
+            hint = getString(R.string.hint_current_password)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val newInput = EditText(requireContext()).apply {
+            hint = getString(R.string.hint_new_password)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val wrapper = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 8)
+            addView(currentInput)
+            addView(newInput)
+        }
+
+        AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
+            .setTitle(R.string.change_password)
+            .setView(wrapper)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val current = currentInput.text?.toString().orEmpty()
+                val next = newInput.text?.toString().orEmpty()
+                if (current.isEmpty() || next.isEmpty()) {
+                    Toast.makeText(requireContext(), R.string.error_fill_all_fields, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val service = authService() ?: return@setPositiveButton
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            service.changePassword(ChangePasswordRequestDto(current, next))
+                        }
+                        Toast.makeText(requireContext(), R.string.password_changed, Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "change password failed", e)
+                        Toast.makeText(requireContext(), R.string.error_generic, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun performLogout() {
+        val service = authService()
+        val session = SessionStore(requireContext())
+        val refresh = session.getRefreshToken()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (service != null) {
+                    withContext(Dispatchers.IO) {
+                        service.logout(LogoutRequestDto(refresh))
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "logout API failed", e)
+            } finally {
+                session.clear()
+                Toast.makeText(requireContext(), R.string.logged_out, Toast.LENGTH_SHORT).show()
+                goToLogin()
+            }
+        }
+    }
+
+    private fun deleteAccount() {
+        val service = authService() ?: return
+        val session = SessionStore(requireContext())
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) { service.deleteAccount() }
+                session.clear()
+                Toast.makeText(requireContext(), R.string.account_deleted, Toast.LENGTH_SHORT).show()
+                goToLogin()
+            } catch (e: Exception) {
+                Log.w(TAG, "delete account failed", e)
+                Toast.makeText(requireContext(), R.string.error_generic, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun goToLogin() {
+        startActivity(
+            Intent(requireContext(), ActivityPreLogin::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        )
+        requireActivity().finish()
+    }
+
+    companion object {
+        private const val TAG = "SettingsFragment"
+    }
+
+    private fun displayNameForSound(stored: String): String {
+        val beep = getString(R.string.alarm_sound_beep)
+        return if (stored == beep || stored.equals("Beep", ignoreCase = true)) {
+            getString(R.string.alarm_sound_beep)
+        } else {
+            getString(R.string.alarm_sound_sunrise)
+        }
     }
 }

@@ -23,3 +23,29 @@ local.properties
 .idea/runConfigurations.xml
 .idea/vcs.xml
 app/release/app-release.aab
+
+# Signing & deployment artifacts (never commit)
+*.jks
+*.keystore
+*.der
+*.pem
+keystore.properties
+Buzz_Buddy.txt
+
+# Python backend
+backend/.env
+backend/.venv/
+backend/venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/*.db
+backend/**/*.db
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Internal planning / agent tooling (not for public showcase)
+.claude/
+_bmad/
+_bmad-output/

@@ -1,7 +1,11 @@
 package com.ambrxsh.buzzbuddy.repository
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.LiveData
+import com.ambrxsh.buzzbuddy.BuzzBuddyApp
+import com.ambrxsh.buzzbuddy.clients.AlarmBackendService
+import com.ambrxsh.buzzbuddy.dtos.AlarmDto
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
 import com.ambrxsh.buzzbuddy.room.SmartAlarmsDatabase
 import com.ambrxsh.buzzbuddy.room.smartAlarmDao
@@ -10,24 +14,47 @@ class SmartAlarmRepository(application: Application) {
 
     private val smartAlarmDao: smartAlarmDao
     private val alarmList: LiveData<List<SmartAlarm>>
+    private val alarmApi: AlarmBackendService?
 
     init {
-        // Updated to match the new Database class
         val database = SmartAlarmsDatabase.getDatabase(application)
         smartAlarmDao = database.smartAlarmDao()
         alarmList = smartAlarmDao.getAllAlarms()
+        alarmApi = (application as? BuzzBuddyApp)?.retrofit?.create(AlarmBackendService::class.java)
     }
 
     suspend fun insertAndReturnId(smartAlarm: SmartAlarm): Long {
-        return smartAlarmDao.insert(smartAlarm)
+        val id = smartAlarmDao.insert(smartAlarm)
+        smartAlarm.alarmId = id.toInt()
+        pushCreate(smartAlarm)
+        return id
+    }
+
+    suspend fun restore(smartAlarm: SmartAlarm) {
+        smartAlarmDao.insert(smartAlarm)
+        if (smartAlarm.serverId == null) {
+            pushCreate(smartAlarm)
+        }
     }
 
     suspend fun update(smartAlarm: SmartAlarm) {
         smartAlarmDao.update(smartAlarm)
+        val serverId = smartAlarm.serverId ?: return
+        try {
+            alarmApi?.updateAlarm(serverId, smartAlarm.toDto())
+        } catch (e: Exception) {
+            Log.w(TAG, "sync update failed", e)
+        }
     }
 
     suspend fun delete(smartAlarm: SmartAlarm) {
         smartAlarmDao.delete(smartAlarm)
+        val serverId = smartAlarm.serverId ?: return
+        try {
+            alarmApi?.deleteAlarm(serverId)
+        } catch (e: Exception) {
+            Log.w(TAG, "sync delete failed", e)
+        }
     }
 
     fun getAlarmById(alarmId: Int): LiveData<SmartAlarm?> {
@@ -40,5 +67,27 @@ class SmartAlarmRepository(application: Application) {
 
     suspend fun getAlarmByTime(hour: Int, minute: Int): SmartAlarm? {
         return smartAlarmDao.getAlarmByTime(hour, minute)
+    }
+
+    private suspend fun pushCreate(alarm: SmartAlarm) {
+        try {
+            val created = alarmApi?.createAlarm(alarm.toDto()) ?: return
+            alarm.serverId = created.id
+            smartAlarmDao.update(alarm)
+        } catch (e: Exception) {
+            Log.w(TAG, "sync create failed", e)
+        }
+    }
+
+    private fun SmartAlarm.toDto() = AlarmDto(
+        id = serverId,
+        title = alarmTitle,
+        hour = alarmTime_hour,
+        minute = alarmTime_minute,
+        enabled = isEnabled
+    )
+
+    companion object {
+        private const val TAG = "SmartAlarmRepository"
     }
 }
