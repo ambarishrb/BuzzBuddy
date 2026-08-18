@@ -98,8 +98,37 @@ class Phase3SchedulerAndUndoTest {
             file.readText().contains("BuzzBuddyAlarmScheduler")
         }.map { it.name }
         assertTrue("SetAlarmPage must use the shared scheduler", callers.contains("SetAlarmPage.kt"))
-        assertTrue("BootReceiver must use the shared scheduler", callers.contains("BootReceiver.kt"))
         assertTrue("EditAlarmActivity must use the shared scheduler", callers.contains("EditAlarmActivity.kt"))
+        assertTrue(
+            "AlarmRescheduler must use the shared scheduler",
+            callers.contains("AlarmRescheduler.kt")
+        )
+
+        val bootReceiver = File(root, "app/src/main/java/com/ambrxsh/buzzbuddy/bootreceiver/BootReceiver.kt").readText()
+        assertTrue("BootReceiver must restore through AlarmRescheduler", bootReceiver.contains("AlarmRescheduler"))
+        assertTrue("BootReceiver must handle app updates", bootReceiver.contains("ACTION_MY_PACKAGE_REPLACED"))
+        assertTrue("BootReceiver must handle unlock", bootReceiver.contains("ACTION_USER_UNLOCKED"))
+        assertTrue("BootReceiver must handle timezone changes", bootReceiver.contains("ACTION_TIMEZONE_CHANGED"))
+    }
+
+    @Test
+    fun nextDuePrefersActiveSnoozeOverTomorrowDaily() {
+        val now = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 7)
+            set(Calendar.MINUTE, 5)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val snoozeUntil = now + TimeUnit.MINUTES.toMillis(10)
+        val due = AlarmScheduleMath.nextDueMillis(7, 0, snoozeUntil, now)
+        assertEquals(snoozeUntil, due)
+    }
+
+    @Test
+    fun deleteSnackbarIsAnchoredAboveAddButton() {
+        val setAlarmPage = File(findProjectRoot(), "app/src/main/java/com/ambrxsh/buzzbuddy/fragments/SetAlarmPage.kt").readText()
+        assertTrue(setAlarmPage.contains("setAnchorView(binding.addAlarmButton)"))
+        assertTrue(setAlarmPage.contains("bindingAdapterPosition"))
     }
 
     @Test

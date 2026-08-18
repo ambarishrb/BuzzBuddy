@@ -1,14 +1,11 @@
 package com.ambrxsh.buzzbuddy
 
-import android.annotation.SuppressLint
-import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
-import android.widget.EditText
 import android.widget.NumberPicker
 import android.widget.TextView
-import androidx.annotation.RequiresApi
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
@@ -17,18 +14,17 @@ import androidx.lifecycle.lifecycleScope
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
 import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
 import com.ambrxsh.buzzbuddy.utils.AlarmPermissionHelper
+import com.ambrxsh.buzzbuddy.utils.setPickerTextColor
 import com.ambrxsh.buzzbuddy.utils.setTwoDigitRange
 import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
-import timber.log.Timber
-
 
 class EditAlarmActivity : AppCompatActivity() {
 
     private lateinit var smartAlarmViewModel: SmartAlarmViewModel
     private var alarmId: Int = -1
-    private lateinit var alarm: SmartAlarm
+    private var alarm: SmartAlarm? = null
 
     private lateinit var hourPicker: NumberPicker
     private lateinit var minutePicker: NumberPicker
@@ -36,7 +32,6 @@ class EditAlarmActivity : AppCompatActivity() {
     private lateinit var saveButton: Button
     private lateinit var cancelButton: Button
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_alarm)
@@ -49,82 +44,69 @@ class EditAlarmActivity : AppCompatActivity() {
 
         window.statusBarColor = ContextCompat.getColor(this, R.color.app_theme)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            window.decorView.systemUiVisibility = 0 // light icons for dark background
+            window.decorView.systemUiVisibility = 0
         }
-
-
 
         smartAlarmViewModel = ViewModelProvider(this)[SmartAlarmViewModel::class.java]
         val alarmScheduler = BuzzBuddyAlarmScheduler(this)
 
         alarmId = intent.getIntExtra("alarmId", -1)
-        if (alarmId == -1) finish()
+        if (alarmId == -1) {
+            finish()
+            return
+        }
 
         hourPicker = findViewById(R.id.hour_picker)
         minutePicker = findViewById(R.id.minute_picker)
         alarmTitleText = findViewById(R.id.alarm_title)
         saveButton = findViewById(R.id.save_button)
-        cancelButton = findViewById(R.id.delete_button) // acts as cancel
+        cancelButton = findViewById(R.id.delete_button)
 
-        // Fetch the alarm and populate UI
         smartAlarmViewModel.getAllAlarms().observe(this) { alarms ->
-            alarm = alarms.find { it.alarmId == alarmId } ?: return@observe
+            val loaded = alarms.find { it.alarmId == alarmId } ?: return@observe
+            alarm = loaded
 
             hourPicker.setTwoDigitRange(0, 23)
-            hourPicker.value = alarm.alarmTime_hour
-            hourPicker.setTextColor("#212121".toColorInt())
+            hourPicker.value = loaded.alarmTime_hour
+            hourPicker.setPickerTextColor("#212121".toColorInt())
 
             minutePicker.setTwoDigitRange(0, 59)
-            minutePicker.value = alarm.alarmTime_minute
-            minutePicker.setTextColor("#212121".toColorInt())
+            minutePicker.value = loaded.alarmTime_minute
+            minutePicker.setPickerTextColor("#212121".toColorInt())
 
-            alarmTitleText.text = alarm.alarmTitle
+            alarmTitleText.text = loaded.alarmTitle
         }
 
-        // Save button updates alarm and schedules it
         saveButton.setOnClickListener {
-            alarm.alarmTime_hour = hourPicker.value
-            alarm.alarmTime_minute = minutePicker.value
-            alarm.alarmTitle = alarmTitleText.text.toString()
+            val current = alarm ?: return@setOnClickListener
+            val hour = hourPicker.value
+            val minute = minutePicker.value
 
+            saveButton.isEnabled = false
             lifecycleScope.launch {
-                smartAlarmViewModel.update(alarm)
-                alarmScheduler.cancel(alarm.alarmId)
-                if (!alarmScheduler.schedule(alarm.alarmId, alarm.alarmTime_hour, alarm.alarmTime_minute)) {
-                    AlarmPermissionHelper.requestExactAlarmPermission(this@EditAlarmActivity)
+                val duplicate = smartAlarmViewModel.getAlarmByTimeExcluding(hour, minute, current.alarmId)
+                if (duplicate != null) {
+                    Toast.makeText(this@EditAlarmActivity, R.string.alarm_already_set, Toast.LENGTH_SHORT).show()
+                    saveButton.isEnabled = true
+                    return@launch
                 }
+
+                current.alarmTime_hour = hour
+                current.alarmTime_minute = minute
+                current.alarmTitle = alarmTitleText.text.toString()
+                smartAlarmViewModel.updateAndWait(current)
+                alarmScheduler.cancel(current.alarmId)
+                if (current.isEnabled) {
+                    if (!alarmScheduler.schedule(current.alarmId, current.alarmTime_hour, current.alarmTime_minute)) {
+                        AlarmPermissionHelper.requestExactAlarmPermission(this@EditAlarmActivity)
+                    }
+                }
+                finish()
             }
-            finish()
         }
 
-        // Cancel button just closes activity
         cancelButton.setOnClickListener {
             finish()
         }
     }
-
-    @SuppressLint("SoonBlockedPrivateApi")
-
-    fun NumberPicker.setTextColorCompat(color: Int) {
-        try {
-            // Change selector wheel paint
-            val selectorWheelPaintField = NumberPicker::class.java.getDeclaredField("mSelectorWheelPaint")
-            selectorWheelPaintField.isAccessible = true
-            val paint = selectorWheelPaintField.get(this) as Paint
-            paint.color = color
-
-            // Change EditText inside NumberPicker
-            val inputTextField = NumberPicker::class.java.getDeclaredField("mInputText")
-            inputTextField.isAccessible = true
-            val inputText = inputTextField.get(this) as EditText
-            inputText.setTextColor(color)
-
-            // Force redraw
-            invalidate()
-        } catch (e: Exception) {
-            Timber.e(e, "Could not set NumberPicker text color")
-        }
-    }
-
-
 }

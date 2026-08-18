@@ -9,6 +9,7 @@ import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.databinding.ActivityMainBinding
 import com.ambrxsh.buzzbuddy.fragments.ActivityAlarmFragment
 import com.ambrxsh.buzzbuddy.fragments.SetAlarmPage
+import com.ambrxsh.buzzbuddy.scheduler.AlarmRescheduler
 import com.ambrxsh.buzzbuddy.utils.AlarmPermissionHelper
 import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
 
@@ -35,6 +36,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             openSetAlarmPage()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        AlarmRescheduler.restoreAsync(this)
     }
 
     override fun onNewIntent(intent: Intent) {

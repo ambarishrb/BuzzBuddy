@@ -5,6 +5,8 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -51,27 +53,7 @@ object AlarmPlayer {
         if (mediaPlayer == null) {
             applyAlarmStreamVolume(settings.volume)
             requestAlarmAudioFocus()
-
-            val alarmUri = android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-                ?: android.provider.Settings.System.DEFAULT_RINGTONE_URI
-            val attributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(attributes)
-                setDataSource(appContext, alarmUri)
-                isLooping = true
-                prepare()
-                if (settings.gradualVolume) {
-                    setVolume(0f, 0f)
-                    start()
-                    gradualVolumeIncrease(settings.volume)
-                } else {
-                    start()
-                }
-            }
+            startAlarmAudio(appContext, settings.alarmSound, settings.gradualVolume, settings.volume)
         }
 
         if (settings.vibrate && vibrator == null) {
@@ -96,6 +78,60 @@ object AlarmPlayer {
             autoDismissRunnable = Runnable { stop() }
             handler.postDelayed(autoDismissRunnable!!, 120_000)
         }
+    }
+
+    private fun startAlarmAudio(
+        appContext: Context,
+        soundName: String,
+        gradualVolume: Boolean,
+        volumePercent: Int
+    ) {
+        val attributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        val uris = soundUris(appContext, soundName)
+        for (uri in uris) {
+            try {
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(attributes)
+                    setDataSource(appContext, uri)
+                    isLooping = true
+                    prepare()
+                    if (gradualVolume) {
+                        setVolume(0f, 0f)
+                        start()
+                        gradualVolumeIncrease(volumePercent)
+                    } else {
+                        start()
+                    }
+                }
+                return
+            } catch (e: Exception) {
+                Timber.w(e, "Could not play alarm uri %s", uri)
+                mediaPlayer?.release()
+                mediaPlayer = null
+            }
+        }
+        Timber.e("No alarm sound could be started")
+    }
+
+    private fun soundUris(context: Context, soundName: String): List<Uri> {
+        val beep = context.getString(R.string.alarm_sound_beep)
+        val wantsBeep = soundName.equals(beep, ignoreCase = true)
+        val primary = if (wantsBeep) {
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                ?: android.provider.Settings.System.DEFAULT_NOTIFICATION_URI
+        } else {
+            android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        }
+        val fallbacks = listOfNotNull(
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+            android.provider.Settings.System.DEFAULT_RINGTONE_URI,
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        )
+        return (listOfNotNull(primary) + fallbacks).distinct()
     }
 
     private fun applyAlarmStreamVolume(volumePercent: Int) {

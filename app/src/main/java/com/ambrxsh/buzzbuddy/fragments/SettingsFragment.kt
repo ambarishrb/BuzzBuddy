@@ -4,14 +4,20 @@ import android.app.AlertDialog
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.*
-import androidx.annotation.RequiresApi
+import android.widget.CompoundButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.NumberPicker
+import android.widget.SeekBar
+import android.widget.Switch
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
 import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.model.SettingsData
 import com.ambrxsh.buzzbuddy.utils.SettingsManager
+import com.ambrxsh.buzzbuddy.utils.setPickerTextColor
 import com.google.android.material.appbar.MaterialToolbar
 
 class SettingsFragment : Fragment() {
@@ -40,11 +46,9 @@ class SettingsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Status bar
         requireActivity().window.statusBarColor =
             ContextCompat.getColor(requireContext(), R.color.app_theme)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -52,18 +56,15 @@ class SettingsFragment : Fragment() {
                 View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
-        // Toolbar
         val toolbar = view.findViewById<MaterialToolbar>(R.id.settings_toolbar)
         toolbar.setNavigationIcon(R.drawable.ic_back)
         toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
-        // Settings manager
         settingsManager = SettingsManager(requireContext())
         settings = settingsManager.loadSettings()
 
-        // Bind views
         seekBarVolume = view.findViewById(R.id.seekBarVolume)
         switchGradualVolume = view.findViewById(R.id.switchGradualVolume)
         switchVibrate = view.findViewById(R.id.switchVibrate)
@@ -79,7 +80,6 @@ class SettingsFragment : Fragment() {
         layoutVibrate = view.findViewById(R.id.layoutVibrate)
         layoutAutoDismiss = view.findViewById(R.id.layoutAutoDismiss)
 
-        // Load initial values
         seekBarVolume.progress = settings.volume
         switchGradualVolume.isChecked = settings.gradualVolume
         switchVibrate.isChecked = settings.vibrate
@@ -87,7 +87,6 @@ class SettingsFragment : Fragment() {
         tvSnoozeDuration.text = getString(R.string.snooze_duration_minutes, settings.snoozeDuration)
         tvAlarmSound.text = displayNameForSound(settings.alarmSound)
 
-        // SeekBar listener
         seekBarVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 settings.volume = progress
@@ -97,29 +96,19 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        // Switch toggle rows
-        layoutGradualVolume.setOnClickListener {
-            switchGradualVolume.isChecked = !switchGradualVolume.isChecked
-            settings.gradualVolume = switchGradualVolume.isChecked
-            settingsManager.saveSettings(settings)
+        bindSwitch(switchGradualVolume, layoutGradualVolume) { checked ->
+            settings.gradualVolume = checked
+        }
+        bindSwitch(switchVibrate, layoutVibrate) { checked ->
+            settings.vibrate = checked
+        }
+        bindSwitch(switchAutoDismiss, layoutAutoDismiss) { checked ->
+            settings.autoDismiss = checked
         }
 
-        layoutVibrate.setOnClickListener {
-            switchVibrate.isChecked = !switchVibrate.isChecked
-            settings.vibrate = switchVibrate.isChecked
-            settingsManager.saveSettings(settings)
-        }
-
-        layoutAutoDismiss.setOnClickListener {
-            switchAutoDismiss.isChecked = !switchAutoDismiss.isChecked
-            settings.autoDismiss = switchAutoDismiss.isChecked
-            settingsManager.saveSettings(settings)
-        }
-
-        // Snooze picker
         val snoozeClickListener = View.OnClickListener {
             val numberPicker = NumberPicker(requireContext()).apply {
-                setTextColor("#212121".toColorInt())
+                setPickerTextColor("#212121".toColorInt())
                 minValue = 1
                 maxValue = 60
                 value = settings.snoozeDuration
@@ -151,11 +140,10 @@ class SettingsFragment : Fragment() {
         layoutSnooze.setOnClickListener(snoozeClickListener)
         btnEditSnooze.setOnClickListener(snoozeClickListener)
 
-        // Alarm sound toggle on row or button
         val alarmSoundClick = View.OnClickListener {
             val sunrise = getString(R.string.alarm_sound_sunrise)
             val beep = getString(R.string.alarm_sound_beep)
-            val newSound = if (settings.alarmSound == beep) sunrise else beep
+            val newSound = if (displayNameForSound(settings.alarmSound) == beep) sunrise else beep
             settings.alarmSound = newSound
             tvAlarmSound.text = displayNameForSound(newSound)
             settingsManager.saveSettings(settings)
@@ -163,6 +151,21 @@ class SettingsFragment : Fragment() {
 
         layoutAlarmSound.setOnClickListener(alarmSoundClick)
         btnChangeSound.setOnClickListener(alarmSoundClick)
+    }
+
+    private fun bindSwitch(
+        switch: Switch,
+        row: LinearLayout,
+        onChanged: (Boolean) -> Unit
+    ) {
+        val listener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
+            onChanged(isChecked)
+            settingsManager.saveSettings(settings)
+        }
+        switch.setOnCheckedChangeListener(listener)
+        row.setOnClickListener {
+            switch.isChecked = !switch.isChecked
+        }
     }
 
     private fun displayNameForSound(stored: String): String {

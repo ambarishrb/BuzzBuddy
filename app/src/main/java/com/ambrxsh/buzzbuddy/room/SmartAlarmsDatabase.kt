@@ -22,7 +22,10 @@ abstract class SmartAlarmsDatabase : RoomDatabase() {
                     context.applicationContext,
                     SmartAlarmsDatabase::class.java,
                     "smart_alarms"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+                    .build()
                 instance = tempInstance
                 tempInstance
             }

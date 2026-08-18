@@ -3,6 +3,7 @@ package com.ambrxsh.buzzbuddy
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.ambrxsh.buzzbuddy.scheduler.AlarmRescheduler
 import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
 import com.ambrxsh.buzzbuddy.services.BuzzBuddyAlarmForegroundService
 import com.ambrxsh.buzzbuddy.utils.SnoozeManager
@@ -37,7 +38,9 @@ class AlarmReceiver : BroadcastReceiver() {
                         BuzzBuddyAlarmScheduler(context).schedule(alarmId, hour, minute)
                     }
                 }
-                SnoozeManager.get(context).clearSnooze(alarmId)
+                if (AlarmRescheduler.isUserUnlocked(context)) {
+                    SnoozeManager.get(context).clearSnooze(alarmId)
+                }
                 BuzzBuddyAlarmForegroundService.start(context, alarmId)
             }
         }

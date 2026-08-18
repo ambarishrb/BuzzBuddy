@@ -23,8 +23,12 @@ class BuzzBuddyAlarmForegroundService : Service() {
 
     companion object {
         const val CHANNEL_ID = "alarm_ringing_channel"
-        const val NOTIFICATION_ID = 1001
+        const val FALLBACK_NOTIFICATION_ID = 1001
         const val ACTION_STOP = "com.ambrxsh.buzzbuddy.STOP_FOREGROUND_ALARM"
+
+        fun notificationId(alarmId: Int): Int {
+            return if (alarmId >= 0) 1000 + alarmId else FALLBACK_NOTIFICATION_ID
+        }
 
         fun start(context: Context, alarmId: Int) {
             val intent = Intent(context, BuzzBuddyAlarmForegroundService::class.java).apply {
@@ -51,22 +55,33 @@ class BuzzBuddyAlarmForegroundService : Service() {
         }
 
         val alarmId = intent?.getIntExtra(BuzzBuddyAlarmScheduler.EXTRA_ALARM_ID, -1) ?: -1
-        Timber.d("Starting ringing foreground service for alarmId=%s", alarmId)
+        if (intent == null || alarmId < 0) {
+            Timber.w("Ignoring ringing service restart without a valid alarm id")
+            val notification = createFullScreenNotification(-1)
+            startRingingForeground(FALLBACK_NOTIFICATION_ID, notification)
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
+        Timber.d("Starting ringing foreground service for alarmId=%s", alarmId)
         val notification = createFullScreenNotification(alarmId)
+        startRingingForeground(notificationId(alarmId), notification)
+        AlarmPlayer.start(this)
+        return START_STICKY
+    }
+
+    private fun startRingingForeground(id: Int, notification: Notification) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceCompat.startForeground(
                 this,
-                NOTIFICATION_ID,
+                id,
                 notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
             )
         } else {
-            startForeground(NOTIFICATION_ID, notification)
+            startForeground(id, notification)
         }
-
-        AlarmPlayer.start(this)
-        return START_STICKY
     }
 
     private fun createFullScreenNotification(alarmId: Int): Notification {
@@ -92,7 +107,7 @@ class BuzzBuddyAlarmForegroundService : Service() {
         }
         val stopPendingIntent = PendingIntent.getBroadcast(
             this,
-            alarmId + 50,
+            notificationId(alarmId) + 50_000,
             stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

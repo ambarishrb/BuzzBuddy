@@ -33,20 +33,29 @@ class SmartAlarmViewModel(application: Application) : AndroidViewModel(applicati
         repository.update(smartAlarm)
     }
 
+    suspend fun updateAndWait(smartAlarm: SmartAlarm) {
+        withContext(Dispatchers.IO) {
+            repository.update(smartAlarm)
+        }
+    }
+
     fun getAlarmById(alarmId: Int): LiveData<SmartAlarm?> {
         return repository.getAlarmById(alarmId)
     }
 
-
-
-
     fun delete(smartAlarm: SmartAlarm) = viewModelScope.launch(Dispatchers.IO) {
         repository.delete(smartAlarm)
     }
-    suspend fun getAlarmByTime(hour: Int, minute: Int): SmartAlarm? {return withContext(Dispatchers.IO){repository.getAlarmByTime(hour,minute)
 
+    suspend fun getAlarmByTime(hour: Int, minute: Int): SmartAlarm? {
+        return withContext(Dispatchers.IO) {
+            repository.getAlarmByTime(hour, minute)
+        }
     }
 
+    suspend fun getAlarmByTimeExcluding(hour: Int, minute: Int, excludeId: Int): SmartAlarm? {
+        return withContext(Dispatchers.IO) {
+            repository.getAlarmByTimeExcluding(hour, minute, excludeId)
+        }
     }
-
 }

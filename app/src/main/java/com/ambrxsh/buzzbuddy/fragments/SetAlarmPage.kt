@@ -11,7 +11,6 @@ import android.widget.EditText
 import android.widget.NumberPicker
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
@@ -24,10 +23,12 @@ import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.adapter.AlarmAdapter
 import com.ambrxsh.buzzbuddy.databinding.FragmentSetAlarmBinding
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
+import com.ambrxsh.buzzbuddy.scheduler.AlarmScheduleMath
 import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
 import com.ambrxsh.buzzbuddy.utils.AlarmPermissionHelper
 import com.ambrxsh.buzzbuddy.utils.AlarmTimeFormat
 import com.ambrxsh.buzzbuddy.utils.SnoozeManager
+import com.ambrxsh.buzzbuddy.utils.setPickerTextColor
 import com.ambrxsh.buzzbuddy.utils.setTwoDigitRange
 import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
 import com.google.android.material.snackbar.Snackbar
@@ -43,6 +44,8 @@ class SetAlarmPage : Fragment() {
     private lateinit var alarmAdapter: AlarmAdapter
     private lateinit var alarmStatus: TextView
     private lateinit var alarmScheduler: BuzzBuddyAlarmScheduler
+    private var latestAlarms: List<SmartAlarm> = emptyList()
+    private var latestSnoozes: Map<Int, Long> = emptyMap()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,7 +55,6 @@ class SetAlarmPage : Fragment() {
         return binding.root
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -90,16 +92,22 @@ class SetAlarmPage : Fragment() {
         binding.recyclerViewAlarms.adapter = alarmAdapter
 
         alarmStatus = binding.tvNextAlarm
+        binding.permissionBanner.setOnClickListener {
+            AlarmPermissionHelper.repairNextGap(requireActivity())
+        }
 
         smartAlarmViewModel.getAllAlarms().observe(viewLifecycleOwner) { alarms ->
+            latestAlarms = alarms
             alarmAdapter.alarmList = alarms
             alarmAdapter.notifyDataSetChanged()
-            updateNextAlarmStatus(alarms)
+            updateNextAlarmStatus()
         }
 
         snoozeManager.activeSnoozes.observe(viewLifecycleOwner) { snoozes ->
+            latestSnoozes = snoozes
             alarmAdapter.snoozeUntilById = snoozes
             alarmAdapter.notifyDataSetChanged()
+            updateNextAlarmStatus()
         }
 
         binding.settingsIcon.setOnClickListener {
@@ -123,7 +131,8 @@ class SetAlarmPage : Fragment() {
             ): Boolean = false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
+                val position = viewHolder.bindingAdapterPosition
+                if (position == RecyclerView.NO_POSITION) return
                 val alarmToDelete = alarmAdapter.returnItemGivenPosition(position)
 
                 alarmScheduler.cancel(alarmToDelete.alarmId)
@@ -136,6 +145,7 @@ class SetAlarmPage : Fragment() {
                 alarmAdapter.notifyItemRemoved(position)
 
                 Snackbar.make(binding.root, R.string.alarm_deleted, Snackbar.LENGTH_LONG)
+                    .setAnchorView(binding.addAlarmButton)
                     .setAction(R.string.undo) {
                         lifecycleScope.launch {
                             smartAlarmViewModel.restore(alarmToDelete)
@@ -148,18 +158,24 @@ class SetAlarmPage : Fragment() {
                             }
 
                             val updatedList = alarmAdapter.alarmList.toMutableList()
-                            updatedList.add(position, alarmToDelete)
+                            val insertAt = position.coerceIn(0, updatedList.size)
+                            updatedList.add(insertAt, alarmToDelete)
                             alarmAdapter.alarmList = updatedList
-                            alarmAdapter.notifyItemInserted(position)
+                            alarmAdapter.notifyItemInserted(insertAt)
                         }
                     }.show()
             }
         }
 
         ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(binding.recyclerViewAlarms)
+        refreshPermissionBanner()
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    override fun onResume() {
+        super.onResume()
+        refreshPermissionBanner()
+    }
+
     @SuppressLint("DefaultLocale")
     private fun showCustomDialog() {
         val builder = android.app.AlertDialog.Builder(requireContext())
@@ -169,12 +185,12 @@ class SetAlarmPage : Fragment() {
 
         val hourPicker = dialogView.findViewById<NumberPicker>(R.id.hour_picker).apply {
             setTwoDigitRange(0, 23)
-            setTextColor("#212121".toColorInt())
+            setPickerTextColor("#212121".toColorInt())
         }
 
         val minutePicker = dialogView.findViewById<NumberPicker>(R.id.minute_picker).apply {
             setTwoDigitRange(0, 59)
-            setTextColor("#212121".toColorInt())
+            setPickerTextColor("#212121".toColorInt())
         }
 
         val alarmTitleEt = dialogView.findViewById<EditText>(R.id.alarm_title)
@@ -204,7 +220,7 @@ class SetAlarmPage : Fragment() {
 
                 val generatedId = smartAlarmViewModel.insertAndReturnId(newAlarm).toInt()
                 newAlarm.alarmId = generatedId
-                smartAlarmViewModel.update(newAlarm)
+                smartAlarmViewModel.updateAndWait(newAlarm)
 
                 scheduleOrPrompt(newAlarm.alarmId, selectedHour, selectedMinute)
                 dialog.dismiss()
@@ -214,34 +230,38 @@ class SetAlarmPage : Fragment() {
         dialog.show()
     }
 
-    private fun updateNextAlarmStatus(alarms: List<SmartAlarm>) {
-        val enabledAlarms = alarms.filter { it.isEnabled }
-
+    private fun updateNextAlarmStatus() {
+        val enabledAlarms = latestAlarms.filter { it.isEnabled }
         if (enabledAlarms.isEmpty()) {
             alarmStatus.text = getString(R.string.no_upcoming_alarms)
             alarmStatus.setTextColor("#8E8E93".toColorInt())
             return
         }
 
-        val now = Calendar.getInstance()
-        val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-
-        val nextAlarm = enabledAlarms.minByOrNull { alarm ->
-            val alarmMinutes = alarm.alarmTime_hour * 60 + alarm.alarmTime_minute
-            val diff = alarmMinutes - nowMinutes
-            if (diff >= 0) diff else diff + 24 * 60
-        }
-
-        if (nextAlarm != null) {
-            alarmStatus.text = getString(
-                R.string.next_alarm_at,
-                AlarmTimeFormat.format12Hour(requireContext(), nextAlarm.alarmTime_hour, nextAlarm.alarmTime_minute)
+        val now = System.currentTimeMillis()
+        val nextMillis = enabledAlarms.minOf { alarm ->
+            AlarmScheduleMath.nextDueMillis(
+                alarm.alarmTime_hour,
+                alarm.alarmTime_minute,
+                latestSnoozes[alarm.alarmId],
+                now
             )
-            alarmStatus.setTextColor("#8E8E93".toColorInt())
-        } else {
-            alarmStatus.text = getString(R.string.no_upcoming_alarms)
-            alarmStatus.setTextColor("#8E8E93".toColorInt())
         }
+        val calendar = Calendar.getInstance().apply { timeInMillis = nextMillis }
+        alarmStatus.text = getString(
+            R.string.next_alarm_at,
+            AlarmTimeFormat.format12Hour(
+                requireContext(),
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE)
+            )
+        )
+        alarmStatus.setTextColor("#8E8E93".toColorInt())
+    }
+
+    private fun refreshPermissionBanner() {
+        val show = AlarmPermissionHelper.hasReliabilityGap(requireContext())
+        binding.permissionBanner.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun scheduleOrPrompt(alarmId: Int, hour: Int, minute: Int) {

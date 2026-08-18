@@ -25,4 +25,17 @@ object AlarmScheduleMath {
             }
         }.timeInMillis
     }
+
+    fun nextDueMillis(
+        hour: Int,
+        minute: Int,
+        snoozeUntil: Long?,
+        nowMillis: Long = System.currentTimeMillis()
+    ): Long {
+        val daily = nextTriggerMillis(hour, minute, nowMillis)
+        if (snoozeUntil != null && snoozeUntil > nowMillis) {
+            return minOf(daily, snoozeUntil)
+        }
+        return daily
+    }
 }

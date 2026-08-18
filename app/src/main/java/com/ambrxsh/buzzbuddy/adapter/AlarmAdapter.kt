@@ -67,7 +67,9 @@ class AlarmAdapter(
         }
     }
 
-    fun returnItemGivenPosition(position: Int): SmartAlarm = alarmList[position]
+    fun returnItemGivenPosition(position: Int): SmartAlarm = alarmList.getOrElse(position) {
+        error("Invalid alarm list position $position")
+    }
 
     override fun getItemCount(): Int = alarmList.size
 

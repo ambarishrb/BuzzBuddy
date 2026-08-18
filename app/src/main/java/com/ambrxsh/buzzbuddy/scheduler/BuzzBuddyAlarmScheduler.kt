@@ -49,15 +49,18 @@ class BuzzBuddyAlarmScheduler(private val context: Context) {
 
     fun scheduleSnooze(alarmId: Int, snoozeMinutes: Int): Long? {
         val triggerAt = snoozeTriggerMillis(snoozeMinutes)
+        return triggerAt.takeIf { scheduleSnoozeAt(alarmId, triggerAt) }
+    }
+
+    fun scheduleSnoozeAt(alarmId: Int, triggerAt: Long): Boolean {
         val calendar = Calendar.getInstance().apply { timeInMillis = triggerAt }
-        val scheduled = scheduleAt(
+        return scheduleAt(
             alarmId,
             triggerAt,
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
             isSnooze = true
         )
-        return triggerAt.takeIf { scheduled }
     }
 
     fun cancelSnooze(alarmId: Int) {

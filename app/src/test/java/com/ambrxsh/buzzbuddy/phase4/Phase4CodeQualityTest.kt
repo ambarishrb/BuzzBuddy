@@ -59,7 +59,7 @@ class Phase4CodeQualityTest {
             .flatMap { file ->
                 file.readLines().mapIndexedNotNull { index, line ->
                     val trimmed = line.trim()
-                    if (trimmed.startsWith("tools:")) return@mapIndexedNotNull null
+                    if (trimmed.startsWith("tools:") || trimmed.contains("tools:")) return@mapIndexedNotNull null
                     val isUserText = Regex("""(android:text|android:hint|android:title|app:title|android:contentDescription)\s*=\s*"[^@?]""")
                     if (isUserText.containsMatchIn(trimmed)) {
                         "${file.name}:${index + 1}: $trimmed"

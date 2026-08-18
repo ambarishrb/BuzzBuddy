@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.ambrxsh.buzzbuddy.AlarmPlayer
 import com.ambrxsh.buzzbuddy.AlarmReceiver
 import com.ambrxsh.buzzbuddy.R
+import com.ambrxsh.buzzbuddy.scheduler.AlarmRescheduler
 import com.ambrxsh.buzzbuddy.scheduler.BuzzBuddyAlarmScheduler
 import com.ambrxsh.buzzbuddy.utils.SettingsManager
 import com.ambrxsh.buzzbuddy.utils.SnoozeManager
@@ -22,7 +23,6 @@ import com.ambrxsh.buzzbuddy.viewmodel.SmartAlarmViewModel
 
 class ActivityAlarmFragment : Fragment() {
 
-    private lateinit var smartAlarmViewModel: SmartAlarmViewModel
     private lateinit var alarmScheduler: BuzzBuddyAlarmScheduler
 
     override fun onCreateView(
@@ -42,14 +42,13 @@ class ActivityAlarmFragment : Fragment() {
             requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
-        smartAlarmViewModel = ViewModelProvider(this)[SmartAlarmViewModel::class.java]
         val alarmLabelTextView = view.findViewById<TextView>(R.id.tvAlarmLabel)
         val alarmTimeTextView = view.findViewById<TextView>(R.id.tvAlarmTime)
-
         alarmTimeTextView.text = AlarmPlayer.getAlarmTime(requireContext())
 
         val alarmId = arguments?.getInt(BuzzBuddyAlarmScheduler.EXTRA_ALARM_ID, -1) ?: -1
-        if (alarmId != -1) {
+        if (alarmId != -1 && AlarmRescheduler.isUserUnlocked(requireContext())) {
+            val smartAlarmViewModel = ViewModelProvider(this)[SmartAlarmViewModel::class.java]
             smartAlarmViewModel.getAlarmById(alarmId).observe(viewLifecycleOwner) { alarm ->
                 alarmLabelTextView.text = alarm?.alarmTitle?.takeIf { it.isNotBlank() }
             }

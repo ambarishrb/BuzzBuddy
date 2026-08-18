@@ -62,8 +62,13 @@
     <string name="settings_alarm_volume">Alarm volume</string>
     <string name="settings_gradual_volume">Gradual volume increase</string>
     <string name="settings_vibrate">Vibrate</string>
-    <string name="settings_auto_dismiss">Auto-dismiss</string>
+    <string name="settings_auto_dismiss">Auto-dismiss ringing after 2 minutes</string>
     <string name="alarm_sound_sunrise">Sunrise</string>
     <string name="alarm_sound_beep">Beep</string>
+    <string name="permission_banner">Alarms may not ring. Tap to fix permissions and battery restrictions.</string>
+    <string name="battery_permission_title">Allow background alarms</string>
+    <string name="battery_permission_message">Turn off battery optimization for Buzz Buddy so alarms can still ring after the phone sleeps.</string>
+    <string name="dnd_permission_title">Allow alarms during Do Not Disturb</string>
+    <string name="dnd_permission_message">Give Buzz Buddy Do Not Disturb access so alarms can still sound when DND or Bedtime is on.</string>
 
 </resources>

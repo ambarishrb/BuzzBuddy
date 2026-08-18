@@ -33,14 +33,13 @@
         android:id="@+id/recyclerViewAlarms"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="8dp"
         android:layout_marginHorizontal="16dp"
         app:layout_constraintBottom_toTopOf="@+id/add_alarm_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
-        tools:listitem="@layout/alarm_item"
-        />
+        app:layout_constraintTop_toBottomOf="@+id/permission_banner"
+        tools:listitem="@layout/alarm_item" />
 
 
 
@@ -69,8 +68,26 @@
         android:text="@string/next_alarm_placeholder"
         android:textColor="#8E8E93"
         android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/recyclerViewAlarms"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/permission_banner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:background="#FFE8EC"
+        android:padding="12dp"
+        android:text="@string/permission_banner"
+        android:textColor="#8B1E2D"
+        android:textSize="13sp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvNextAlarm" />
 
     <!-- RecyclerView for Alarm List -->
 <!--    <androidx.recyclerview.widget.RecyclerView-->

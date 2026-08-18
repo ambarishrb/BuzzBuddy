@@ -8,17 +8,17 @@ The app demonstrates persistent alarm scheduling, reboot resilience, system serv
 ## 🚀 Features
 
 - Add multiple alarms
-- Swipe-to-delete with 10-second undo support
+- Swipe-to-delete with undo (snackbar sits above the + button)
 - Toggle alarm on/off
-- Duplicate alarm time validation
+- Duplicate alarm time validation on create and edit
 - Alarm title display
 - Gradual volume ramp-up for smooth wake-up
-- Snooze duration control (0–60 minutes)
+- Snooze duration control (1–60 minutes)
 - Vibration toggle
-- Multiple alarm sounds
+- Sunrise vs Beep alarm sounds (system alarm vs notification tone)
 - Dismiss alarm directly from notification panel
-- Auto-disable alarm option
-- Reboot-safe alarm rescheduling
+- Auto-dismiss ringing after 2 minutes (alarm stays enabled for the next day)
+- Reboot, app-update, timezone, and cold-start rescheduling
 
 ---
 
