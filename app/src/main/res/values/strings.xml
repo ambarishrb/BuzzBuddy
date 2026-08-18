@@ -76,7 +76,9 @@
     <string name="hint_confirm_password">Confirm password</string>
     <string name="hint_reset_code">Reset code</string>
     <string name="hint_new_password">New password</string>
+    <string name="hint_confirm_new_password">Confirm new password</string>
     <string name="hint_current_password">Current password</string>
+    <string name="action_save_password">Save</string>
     <string name="action_login">Login</string>
     <string name="action_register">Register</string>
     <string name="action_send_code">Send code</string>
@@ -84,9 +86,12 @@
     <string name="forgot_password">Forgot password?</string>
     <string name="no_account_register">Don\'t have an account? Register</string>
     <string name="already_have_account">Already have an account? Sign in</string>
+    <string name="continue_without_login">Continue without logging in</string>
+    <string name="login_to_sync_alarms">Log in to sync your alarms across devices.</string>
     <string name="error_fill_all_fields">Please fill all fields</string>
     <string name="error_passwords_mismatch">Passwords do not match</string>
     <string name="error_invalid_credentials">Invalid credentials</string>
+    <string name="error_user_not_found">No account found for this email</string>
     <string name="error_email_registered">Email already registered</string>
     <string name="error_invalid_registration">Invalid registration details</string>
     <string name="error_invalid_email">Enter a valid email address</string>

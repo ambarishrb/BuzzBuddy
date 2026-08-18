@@ -9,19 +9,25 @@ import com.ambrxsh.buzzbuddy.dtos.AlarmDto
 import com.ambrxsh.buzzbuddy.model.SmartAlarm
 import com.ambrxsh.buzzbuddy.room.SmartAlarmsDatabase
 import com.ambrxsh.buzzbuddy.room.smartAlarmDao
+import com.ambrxsh.buzzbuddy.utils.SessionStore
 
 class SmartAlarmRepository(application: Application) {
 
     private val smartAlarmDao: smartAlarmDao
     private val alarmList: LiveData<List<SmartAlarm>>
     private val alarmApi: AlarmBackendService?
+    private val session: SessionStore?
 
     init {
         val database = SmartAlarmsDatabase.getDatabase(application)
         smartAlarmDao = database.smartAlarmDao()
         alarmList = smartAlarmDao.getAllAlarms()
-        alarmApi = (application as? BuzzBuddyApp)?.retrofit?.create(AlarmBackendService::class.java)
+        val app = application as? BuzzBuddyApp
+        alarmApi = app?.retrofit?.create(AlarmBackendService::class.java)
+        session = app?.session
     }
+
+    private fun canSync(): Boolean = session?.isLoggedIn() == true && alarmApi != null
 
     suspend fun insertAndReturnId(smartAlarm: SmartAlarm): Long {
         val id = smartAlarmDao.insert(smartAlarm)
@@ -39,6 +45,7 @@ class SmartAlarmRepository(application: Application) {
 
     suspend fun update(smartAlarm: SmartAlarm) {
         smartAlarmDao.update(smartAlarm)
+        if (!canSync()) return
         val serverId = smartAlarm.serverId ?: return
         try {
             alarmApi?.updateAlarm(serverId, smartAlarm.toDto())
@@ -49,6 +56,7 @@ class SmartAlarmRepository(application: Application) {
 
     suspend fun delete(smartAlarm: SmartAlarm) {
         smartAlarmDao.delete(smartAlarm)
+        if (!canSync()) return
         val serverId = smartAlarm.serverId ?: return
         try {
             alarmApi?.deleteAlarm(serverId)
@@ -70,6 +78,7 @@ class SmartAlarmRepository(application: Application) {
     }
 
     private suspend fun pushCreate(alarm: SmartAlarm) {
+        if (!canSync()) return
         try {
             val created = alarmApi?.createAlarm(alarm.toDto()) ?: return
             alarm.serverId = created.id

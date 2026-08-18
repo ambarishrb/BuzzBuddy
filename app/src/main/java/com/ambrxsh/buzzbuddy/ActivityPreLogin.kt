@@ -1,6 +1,5 @@
 package com.ambrxsh.buzzbuddy
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.ambrxsh.buzzbuddy.fragments.FragmentForgotPassword
@@ -11,13 +10,23 @@ import com.google.android.material.appbar.MaterialToolbar
 
 class ActivityPreLogin : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_FORCE_AUTH = "forceAuth"
+        const val EXTRA_START_REGISTER = "startRegister"
+    }
+
     private lateinit var toolbar: MaterialToolbar
+    private var forceAuth: Boolean = false
+
+    fun isForceAuth(): Boolean = forceAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (SessionStore(this).isLoggedIn()) {
-            startActivity(Intent(this, com.ambrxsh.buzzbuddy.model.MainActivity::class.java))
+        val session = SessionStore(this)
+        forceAuth = intent.getBooleanExtra(EXTRA_FORCE_AUTH, false)
+        if (!forceAuth && (session.isLoggedIn() || session.hasCompletedAuthGate())) {
+            com.ambrxsh.buzzbuddy.model.MainActivity.startAtHome(this)
             finish()
             return
         }
@@ -29,11 +38,23 @@ class ActivityPreLogin : AppCompatActivity() {
         supportFragmentManager.addOnBackStackChangedListener { applyToolbar() }
 
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, FragmentLogin())
-                .commit()
+            if (intent.getBooleanExtra(EXTRA_START_REGISTER, false)) {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentContainer, FragmentRegister())
+                    .commit()
+            } else {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentContainer, FragmentLogin())
+                    .commit()
+            }
         }
         applyToolbar()
+    }
+
+    fun continueWithoutAccount() {
+        SessionStore(this).markAuthGateCompleted()
+        com.ambrxsh.buzzbuddy.model.MainActivity.startAtHome(this)
+        finish()
     }
 
     fun showLogin(clearStack: Boolean = true) {
@@ -77,7 +98,11 @@ class ActivityPreLogin : AppCompatActivity() {
             }
             else -> {
                 toolbar.title = getString(R.string.login_title)
-                toolbar.navigationIcon = null
+                if (forceAuth) {
+                    toolbar.setNavigationIcon(R.drawable.ic_back)
+                } else {
+                    toolbar.navigationIcon = null
+                }
             }
         }
     }

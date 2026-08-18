@@ -21,6 +21,12 @@ class SessionStore(context: Context) {
 
     fun isLoggedIn(): Boolean = !getAccessToken().isNullOrBlank()
 
+    fun hasCompletedAuthGate(): Boolean = prefs.getBoolean(KEY_AUTH_GATE_DONE, false)
+
+    fun markAuthGateCompleted() {
+        prefs.edit().putBoolean(KEY_AUTH_GATE_DONE, true).commit()
+    }
+
     fun saveSession(
         accessToken: String,
         refreshToken: String?,
@@ -32,10 +38,11 @@ class SessionStore(context: Context) {
             .putString(KEY_LEGACY_TOKEN, accessToken)
             .putString(KEY_REFRESH_TOKEN, refreshToken)
             .putString(KEY_EMAIL, email)
+            .putBoolean(KEY_AUTH_GATE_DONE, true)
             .apply {
                 if (!name.isNullOrBlank()) putString(KEY_NAME, name)
             }
-            .apply()
+            .commit()
     }
 
     fun saveProfile(name: String?, email: String?) {
@@ -64,5 +71,6 @@ class SessionStore(context: Context) {
         private const val KEY_REFRESH_TOKEN = "refresh_token"
         private const val KEY_EMAIL = "email"
         private const val KEY_NAME = "name"
+        private const val KEY_AUTH_GATE_DONE = "auth_gate_done"
     }
 }

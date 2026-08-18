@@ -17,15 +17,22 @@ import com.ambrxsh.buzzbuddy.BuzzBuddyApp
 import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.clients.AuthClientService
 import com.ambrxsh.buzzbuddy.dtos.ChangePasswordRequestDto
+import com.ambrxsh.buzzbuddy.dtos.LoginRequestDto
 import com.ambrxsh.buzzbuddy.dtos.LogoutRequestDto
 import com.ambrxsh.buzzbuddy.model.SettingsData
 import com.ambrxsh.buzzbuddy.utils.SessionStore
 import com.ambrxsh.buzzbuddy.utils.SettingsManager
 import com.ambrxsh.buzzbuddy.utils.setTwoDigitRange
+import com.ambrxsh.buzzbuddy.utils.apiErrorMessage
+import com.ambrxsh.buzzbuddy.utils.setErrorKeepEndIcon
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 class SettingsFragment : Fragment() {
 
@@ -69,7 +76,9 @@ class SettingsFragment : Fragment() {
         val toolbar = view.findViewById<MaterialToolbar>(R.id.settings_toolbar)
         toolbar.setNavigationIcon(R.drawable.ic_back)
         toolbar.setNavigationOnClickListener {
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+            if (!parentFragmentManager.popBackStackImmediate()) {
+                requireActivity().finish()
+            }
         }
 
         // Settings manager
@@ -179,12 +188,29 @@ class SettingsFragment : Fragment() {
         bindAccountSection(view)
     }
 
-    private fun bindAccountSection(view: View) {
-        val nameView = view.findViewById<TextView>(R.id.tvAccountName)
-        val emailView = view.findViewById<TextView>(R.id.tvAccountEmail)
-        val session = SessionStore(requireContext())
-        renderProfile(nameView, emailView, session)
+    override fun onResume() {
+        super.onResume()
+        view?.let { refreshAccountUi(it) }
+    }
 
+    private fun bindAccountSection(view: View) {
+        refreshAccountUi(view)
+
+        view.findViewById<View>(R.id.layoutLogin).setOnClickListener {
+            startActivity(
+                Intent(requireContext(), ActivityPreLogin::class.java).apply {
+                    putExtra(ActivityPreLogin.EXTRA_FORCE_AUTH, true)
+                }
+            )
+        }
+        view.findViewById<View>(R.id.layoutRegister).setOnClickListener {
+            startActivity(
+                Intent(requireContext(), ActivityPreLogin::class.java).apply {
+                    putExtra(ActivityPreLogin.EXTRA_FORCE_AUTH, true)
+                    putExtra(ActivityPreLogin.EXTRA_START_REGISTER, true)
+                }
+            )
+        }
         view.findViewById<View>(R.id.layoutChangePassword).setOnClickListener {
             showChangePasswordDialog()
         }
@@ -205,23 +231,38 @@ class SettingsFragment : Fragment() {
                 .show()
         }
 
+        val session = SessionStore(requireContext())
+        if (!session.isLoggedIn()) return
         val service = authService() ?: return
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val user = withContext(Dispatchers.IO) { service.me() }
                 session.saveProfile(user.name, user.email)
-                renderProfile(nameView, emailView, session)
+                view.let { refreshAccountUi(it) }
             } catch (e: Exception) {
                 Log.w(TAG, "load profile failed", e)
             }
         }
     }
 
-    private fun renderProfile(nameView: TextView, emailView: TextView, session: SessionStore) {
-        val name = session.getName().orEmpty()
-        val email = session.getEmail().orEmpty()
-        nameView.text = name.ifBlank { getString(R.string.account_name_placeholder) }
-        emailView.text = email.ifBlank { getString(R.string.account_email_placeholder) }
+    private fun refreshAccountUi(view: View) {
+        val session = SessionStore(requireContext())
+        val loggedIn = session.isLoggedIn()
+        val nameView = view.findViewById<TextView>(R.id.tvAccountName)
+        val emailView = view.findViewById<TextView>(R.id.tvAccountEmail)
+        if (loggedIn) {
+            val name = session.getName().orEmpty()
+            val email = session.getEmail().orEmpty()
+            nameView.text = name.ifBlank { getString(R.string.account_name_placeholder) }
+            emailView.text = email.ifBlank { getString(R.string.account_email_placeholder) }
+        }
+        view.findViewById<View>(R.id.layoutAccountInfo).visibility = if (loggedIn) View.VISIBLE else View.GONE
+        view.findViewById<View>(R.id.layoutChangePassword).visibility = if (loggedIn) View.VISIBLE else View.GONE
+        view.findViewById<View>(R.id.layoutLogout).visibility = if (loggedIn) View.VISIBLE else View.GONE
+        view.findViewById<View>(R.id.layoutDeleteAccount).visibility = if (loggedIn) View.VISIBLE else View.GONE
+        view.findViewById<View>(R.id.tvGuestAccountHint).visibility = if (loggedIn) View.GONE else View.VISIBLE
+        view.findViewById<View>(R.id.layoutLogin).visibility = if (loggedIn) View.GONE else View.VISIBLE
+        view.findViewById<View>(R.id.layoutRegister).visibility = if (loggedIn) View.GONE else View.VISIBLE
     }
 
     private fun authService(): AuthClientService? {
@@ -234,53 +275,95 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showChangePasswordDialog() {
-        val currentInput = EditText(requireContext()).apply {
-            hint = getString(R.string.hint_current_password)
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        val newInput = EditText(requireContext()).apply {
-            hint = getString(R.string.hint_new_password)
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        val wrapper = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 24, 48, 8)
-            addView(currentInput)
-            addView(newInput)
-        }
+        val content = layoutInflater.inflate(R.layout.dialog_change_password, null, false)
+        val currentLayout = content.findViewById<TextInputLayout>(R.id.currentPasswordLayout)
+        val newLayout = content.findViewById<TextInputLayout>(R.id.newPasswordLayout)
+        val confirmLayout = content.findViewById<TextInputLayout>(R.id.confirmNewPasswordLayout)
+        val currentInput = content.findViewById<TextInputEditText>(R.id.inputCurrentPassword)
+        val newInput = content.findViewById<TextInputEditText>(R.id.inputNewPassword)
+        val confirmInput = content.findViewById<TextInputEditText>(R.id.inputConfirmNewPassword)
 
-        AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
+        val dialog = AlertDialog.Builder(requireContext(), R.style.Snooze_dialog_theme)
             .setTitle(R.string.change_password)
-            .setView(wrapper)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+            .setView(content)
+            .setPositiveButton(R.string.action_save_password, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+            saveButton.setTextColor("#e14f62".toColorInt())
+            cancelButton.setTextColor("#696969".toColorInt())
+            saveButton.setOnClickListener {
+                currentLayout.setErrorKeepEndIcon(null)
+                newLayout.setErrorKeepEndIcon(null)
+                confirmLayout.setErrorKeepEndIcon(null)
+
                 val current = currentInput.text?.toString().orEmpty()
                 val next = newInput.text?.toString().orEmpty()
-                if (current.isEmpty() || next.isEmpty()) {
-                    Toast.makeText(requireContext(), R.string.error_fill_all_fields, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                val confirm = confirmInput.text?.toString().orEmpty()
+                var invalid = false
+                if (current.isEmpty()) {
+                    currentLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
+                    invalid = true
                 }
-                val service = authService() ?: return@setPositiveButton
+                if (next.isEmpty()) {
+                    newLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
+                    invalid = true
+                } else if (next.length < 6) {
+                    newLayout.setErrorKeepEndIcon(getString(R.string.error_password_too_short))
+                    invalid = true
+                }
+                if (confirm.isEmpty()) {
+                    confirmLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
+                    invalid = true
+                } else if (next.isNotEmpty() && next != confirm) {
+                    confirmLayout.setErrorKeepEndIcon(getString(R.string.error_passwords_mismatch))
+                    invalid = true
+                }
+                if (invalid) return@setOnClickListener
+
+                val service = authService() ?: return@setOnClickListener
+                val session = SessionStore(requireContext())
+                val email = session.getEmail().orEmpty()
+                saveButton.isEnabled = false
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         withContext(Dispatchers.IO) {
                             service.changePassword(ChangePasswordRequestDto(current, next))
+                            if (email.isNotBlank()) {
+                                val tokens = service.login(LoginRequestDto(email, next))
+                                val access = tokens.accessToken.ifBlank { tokens.token.orEmpty() }
+                                session.saveSession(access, tokens.refreshToken, email)
+                            }
                         }
                         Toast.makeText(requireContext(), R.string.password_changed, Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    } catch (e: HttpException) {
+                        Log.w(TAG, "change password HTTP ${e.code()}", e)
+                        val msg = e.apiErrorMessage(getString(R.string.error_generic))
+                        if (e.code() == 400 || e.code() == 401) {
+                            currentLayout.setErrorKeepEndIcon(getString(R.string.error_invalid_credentials))
+                        } else {
+                            newLayout.setErrorKeepEndIcon(msg)
+                        }
                     } catch (e: Exception) {
                         Log.w(TAG, "change password failed", e)
                         Toast.makeText(requireContext(), R.string.error_generic, Toast.LENGTH_SHORT).show()
+                    } finally {
+                        if (dialog.isShowing) saveButton.isEnabled = true
                     }
                 }
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        }
+        dialog.show()
     }
 
     private fun performLogout() {
         val service = authService()
-        val session = SessionStore(requireContext())
+        val appContext = requireContext().applicationContext
+        val session = SessionStore(appContext)
         val refresh = session.getRefreshToken()
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -289,39 +372,36 @@ class SettingsFragment : Fragment() {
                         service.logout(LogoutRequestDto(refresh))
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "logout API failed", e)
-            } finally {
-                session.clear()
-                Toast.makeText(requireContext(), R.string.logged_out, Toast.LENGTH_SHORT).show()
-                goToLogin()
             }
+            session.clear()
+            session.markAuthGateCompleted()
+            Toast.makeText(appContext, R.string.logged_out, Toast.LENGTH_SHORT).show()
+            view?.let { refreshAccountUi(it) }
         }
     }
 
     private fun deleteAccount() {
         val service = authService() ?: return
-        val session = SessionStore(requireContext())
+        val appContext = requireContext().applicationContext
+        val session = SessionStore(appContext)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 withContext(Dispatchers.IO) { service.deleteAccount() }
                 session.clear()
-                Toast.makeText(requireContext(), R.string.account_deleted, Toast.LENGTH_SHORT).show()
-                goToLogin()
+                session.markAuthGateCompleted()
+                Toast.makeText(appContext, R.string.account_deleted, Toast.LENGTH_SHORT).show()
+                view?.let { refreshAccountUi(it) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "delete account failed", e)
-                Toast.makeText(requireContext(), R.string.error_generic, Toast.LENGTH_SHORT).show()
+                Toast.makeText(appContext, R.string.error_generic, Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    private fun goToLogin() {
-        startActivity(
-            Intent(requireContext(), ActivityPreLogin::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-        )
-        requireActivity().finish()
     }
 
     companion object {

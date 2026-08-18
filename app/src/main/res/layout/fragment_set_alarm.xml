@@ -96,6 +96,7 @@
         android:layout_marginBottom="35dp"
         android:src="@drawable/icon_add"
         android:backgroundTint="#e14f62"
+        app:tint="@color/white"
         android:contentDescription="@string/content_description_add_alarm" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

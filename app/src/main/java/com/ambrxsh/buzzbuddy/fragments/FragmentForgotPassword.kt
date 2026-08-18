@@ -12,6 +12,7 @@ import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.clients.AuthClientService
 import com.ambrxsh.buzzbuddy.dtos.PasswordResetConfirmDto
 import com.ambrxsh.buzzbuddy.dtos.PasswordResetRequestDto
+import com.ambrxsh.buzzbuddy.utils.setErrorKeepEndIcon
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -29,9 +30,11 @@ class FragmentForgotPassword : Fragment(R.layout.fragment_forgot_password) {
         val emailLayout = view.findViewById<TextInputLayout>(R.id.emailLayout)
         val codeLayout = view.findViewById<TextInputLayout>(R.id.codeLayout)
         val newPasswordLayout = view.findViewById<TextInputLayout>(R.id.newPasswordLayout)
+        val confirmNewPasswordLayout = view.findViewById<TextInputLayout>(R.id.confirmNewPasswordLayout)
         val inputEmail = view.findViewById<TextInputEditText>(R.id.inputEmail)
         val inputCode = view.findViewById<TextInputEditText>(R.id.inputCode)
         val inputNewPassword = view.findViewById<TextInputEditText>(R.id.inputNewPassword)
+        val inputConfirmNewPassword = view.findViewById<TextInputEditText>(R.id.inputConfirmNewPassword)
         val sendCodeButton = view.findViewById<MaterialButton>(R.id.sendCodeButton)
         val resetButton = view.findViewById<MaterialButton>(R.id.resetButton)
 
@@ -43,10 +46,10 @@ class FragmentForgotPassword : Fragment(R.layout.fragment_forgot_password) {
         val authService = app.retrofit.create(AuthClientService::class.java)
 
         sendCodeButton.setOnClickListener {
-            emailLayout.error = null
+            emailLayout.setErrorKeepEndIcon(null)
             val email = inputEmail.text?.toString()?.trim().orEmpty()
             if (email.isEmpty()) {
-                emailLayout.error = getString(R.string.error_fill_all_fields)
+                emailLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 return@setOnClickListener
             }
             sendCodeButton.isEnabled = false
@@ -69,22 +72,34 @@ class FragmentForgotPassword : Fragment(R.layout.fragment_forgot_password) {
         }
 
         resetButton.setOnClickListener {
-            codeLayout.error = null
-            newPasswordLayout.error = null
+            codeLayout.setErrorKeepEndIcon(null)
+            newPasswordLayout.setErrorKeepEndIcon(null)
+            confirmNewPasswordLayout.setErrorKeepEndIcon(null)
             val email = inputEmail.text?.toString()?.trim().orEmpty()
             val code = inputCode.text?.toString()?.trim().orEmpty()
             val newPassword = inputNewPassword.text?.toString().orEmpty()
+            val confirmPassword = inputConfirmNewPassword.text?.toString().orEmpty()
             var invalid = false
             if (email.isEmpty()) {
-                emailLayout.error = getString(R.string.error_fill_all_fields)
+                emailLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 invalid = true
             }
             if (code.isEmpty()) {
-                codeLayout.error = getString(R.string.error_fill_all_fields)
+                codeLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 invalid = true
             }
             if (newPassword.isEmpty()) {
-                newPasswordLayout.error = getString(R.string.error_fill_all_fields)
+                newPasswordLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
+                invalid = true
+            } else if (newPassword.length < 6) {
+                newPasswordLayout.setErrorKeepEndIcon(getString(R.string.error_password_too_short))
+                invalid = true
+            }
+            if (confirmPassword.isEmpty()) {
+                confirmNewPasswordLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
+                invalid = true
+            } else if (newPassword.isNotEmpty() && newPassword != confirmPassword) {
+                confirmNewPasswordLayout.setErrorKeepEndIcon(getString(R.string.error_passwords_mismatch))
                 invalid = true
             }
             if (invalid) return@setOnClickListener
@@ -105,7 +120,7 @@ class FragmentForgotPassword : Fragment(R.layout.fragment_forgot_password) {
                     (activity as? ActivityPreLogin)?.showLogin()
                 } catch (e: HttpException) {
                     Log.w(TAG, "Reset confirm HTTP ${e.code()}", e)
-                    codeLayout.error = getString(R.string.error_generic) + " (${e.code()})"
+                    codeLayout.setErrorKeepEndIcon(getString(R.string.error_generic) + " (${e.code()})")
                 } catch (e: IOException) {
                     Log.w(TAG, "Reset confirm network error", e)
                     Toast.makeText(requireContext(), R.string.error_network, Toast.LENGTH_SHORT).show()

@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.NumberPicker
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
@@ -56,6 +57,15 @@ class SetAlarmPage : Fragment() {
     @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    requireActivity().finish()
+                }
+            }
+        )
 
         alarmScheduler = BuzzBuddyAlarmScheduler(requireContext())
         val snoozeManager = SnoozeManager.get(requireContext())
@@ -106,7 +116,7 @@ class SetAlarmPage : Fragment() {
             val settingsFragment = SettingsFragment()
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, settingsFragment)
-                .addToBackStack(null)
+                .addToBackStack("settings")
                 .commit()
         }
 

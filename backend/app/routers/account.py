@@ -26,7 +26,7 @@ def change_password(
     current_user: User = Depends(get_current_user),
 ) -> dict:
     if not verify_password(body.current_password, current_user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials")
     current_user.password_hash = hash_password(body.new_password)
     current_user.updated_at = datetime.now(timezone.utc).isoformat()
     tokens = db.exec(select(RefreshToken).where(RefreshToken.user_id == current_user.id)).all()

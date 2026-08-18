@@ -67,9 +67,10 @@ class BuzzBuddyApp : Application() {
 
     private fun expireSession() {
         session.clear()
+        session.markAuthGateCompleted()
         Handler(Looper.getMainLooper()).post {
             startActivity(
-                Intent(this, ActivityPreLogin::class.java).apply {
+                Intent(this, com.ambrxsh.buzzbuddy.model.MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
             )

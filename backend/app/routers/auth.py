@@ -86,7 +86,9 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> User:
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     user = db.exec(select(User).where(User.email == str(body.email).lower())).first()
-    if user is None or not verify_password(body.password, user.password_hash):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     return _issue_tokens(db, user)
 

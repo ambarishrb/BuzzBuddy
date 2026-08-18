@@ -1,6 +1,5 @@
 package com.ambrxsh.buzzbuddy.fragments
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -16,6 +15,7 @@ import com.ambrxsh.buzzbuddy.dtos.LoginRequestDto
 import com.ambrxsh.buzzbuddy.sync.AlarmSync
 import com.ambrxsh.buzzbuddy.utils.SessionStore
 import com.ambrxsh.buzzbuddy.utils.apiErrorMessage
+import com.ambrxsh.buzzbuddy.utils.setErrorKeepEndIcon
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -42,20 +42,26 @@ class FragmentLogin : Fragment(R.layout.fragment_login) {
         view.findViewById<View>(R.id.registerLink).setOnClickListener {
             (activity as? ActivityPreLogin)?.showRegister()
         }
+        val continueButton = view.findViewById<View>(R.id.continueWithoutLogin)
+        val forceAuth = (activity as? ActivityPreLogin)?.isForceAuth() == true
+        continueButton.visibility = if (forceAuth) View.GONE else View.VISIBLE
+        continueButton.setOnClickListener {
+            (activity as? ActivityPreLogin)?.continueWithoutAccount()
+        }
 
         loginButton.setOnClickListener {
-            emailLayout.error = null
-            passwordLayout.error = null
+            emailLayout.setErrorKeepEndIcon(null)
+            passwordLayout.setErrorKeepEndIcon(null)
 
             val emailText = email.text?.toString()?.trim().orEmpty()
             val passwordText = password.text?.toString().orEmpty()
             if (emailText.isEmpty() || passwordText.isEmpty()) {
-                if (emailText.isEmpty()) emailLayout.error = getString(R.string.error_fill_all_fields)
-                if (passwordText.isEmpty()) passwordLayout.error = getString(R.string.error_fill_all_fields)
+                if (emailText.isEmpty()) emailLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
+                if (passwordText.isEmpty()) passwordLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 return@setOnClickListener
             }
             if (!emailText.contains("@") || !emailText.contains(".")) {
-                emailLayout.error = getString(R.string.error_invalid_email)
+                emailLayout.setErrorKeepEndIcon(getString(R.string.error_invalid_email))
                 return@setOnClickListener
             }
 
@@ -85,19 +91,26 @@ class FragmentLogin : Fragment(R.layout.fragment_login) {
                         AlarmSync.restoreFromServer(requireContext().applicationContext, app)
                     }
                     Toast.makeText(requireContext(), R.string.login_success, Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(requireActivity(), MainActivity::class.java))
+                    MainActivity.startAtHome(requireActivity())
                     requireActivity().finish()
                 } catch (e: HttpException) {
                     Log.w(TAG, "Login HTTP ${e.code()}", e)
-                    val msg = if (e.code() == 401) {
-                        getString(R.string.error_invalid_credentials)
-                    } else {
-                        e.apiErrorMessage(getString(R.string.error_generic) + " (${e.code()})")
-                    }
-                    if (e.code() == 400 && msg.contains("email", ignoreCase = true)) {
-                        emailLayout.error = msg
-                    } else {
-                        passwordLayout.error = msg
+                    val serverMsg = e.apiErrorMessage("")
+                    when {
+                        e.code() == 401 && serverMsg.contains("not found", ignoreCase = true) -> {
+                            emailLayout.setErrorKeepEndIcon(getString(R.string.error_user_not_found))
+                        }
+                        e.code() == 401 -> {
+                            passwordLayout.setErrorKeepEndIcon(getString(R.string.error_invalid_credentials))
+                        }
+                        e.code() == 400 && serverMsg.contains("email", ignoreCase = true) -> {
+                            emailLayout.setErrorKeepEndIcon(serverMsg.ifBlank { getString(R.string.error_invalid_email) })
+                        }
+                        else -> {
+                            passwordLayout.setErrorKeepEndIcon(
+                                serverMsg.ifBlank { getString(R.string.error_generic) + " (${e.code()})" }
+                            )
+                        }
                     }
                 } catch (e: IOException) {
                     Log.w(TAG, "Login network error", e)

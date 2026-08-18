@@ -33,6 +33,7 @@
         <item name="boxCornerRadiusBottomStart">12dp</item>
         <item name="boxCornerRadiusTopEnd">12dp</item>
         <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="errorIconDrawable">@null</item>
     </style>
 
     <style name="Widget.BuzzBuddy.TextInputEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">

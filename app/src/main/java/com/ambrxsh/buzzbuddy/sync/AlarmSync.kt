@@ -45,6 +45,24 @@ object AlarmSync {
                 dao.update(mapped)
             }
         }
+        for (local in dao.getAllAlarmsSync()) {
+            if (local.serverId != null) continue
+            try {
+                val created = api.createAlarm(
+                    com.ambrxsh.buzzbuddy.dtos.AlarmDto(
+                        id = null,
+                        title = local.alarmTitle,
+                        hour = local.alarmTime_hour,
+                        minute = local.alarmTime_minute,
+                        enabled = local.isEnabled
+                    )
+                )
+                local.serverId = created.id
+                dao.update(local)
+            } catch (e: Exception) {
+                Log.w(TAG, "push unsynced alarm failed", e)
+            }
+        }
         for (alarm in dao.getAllAlarmsSync()) {
             scheduler.cancel(alarm.alarmId)
             if (alarm.isEnabled) {

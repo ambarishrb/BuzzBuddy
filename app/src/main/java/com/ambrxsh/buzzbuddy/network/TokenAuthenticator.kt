@@ -17,7 +17,11 @@ class TokenAuthenticator(
 
     override fun authenticate(route: Route?, response: Response): Request? {
         val path = response.request.url.encodedPath
-        if (path == "/api/login" || path == "/api/register" || path == "/api/auth/refresh") {
+        if (path == "/api/login" ||
+            path == "/api/register" ||
+            path == "/api/auth/refresh" ||
+            path == "/api/account/password"
+        ) {
             return null
         }
         if (responseCount(response) >= 2) {
@@ -26,7 +30,9 @@ class TokenAuthenticator(
         }
         val refresh = session.getRefreshToken()
         if (refresh.isNullOrBlank()) {
-            onExpired()
+            if (!session.getAccessToken().isNullOrBlank()) {
+                onExpired()
+            }
             return null
         }
         synchronized(lock) {

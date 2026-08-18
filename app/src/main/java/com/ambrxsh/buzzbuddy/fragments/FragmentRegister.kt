@@ -12,6 +12,7 @@ import com.ambrxsh.buzzbuddy.R
 import com.ambrxsh.buzzbuddy.clients.AuthClientService
 import com.ambrxsh.buzzbuddy.dtos.RegisterRequestDto
 import com.ambrxsh.buzzbuddy.utils.apiErrorMessage
+import com.ambrxsh.buzzbuddy.utils.setErrorKeepEndIcon
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -39,12 +40,18 @@ class FragmentRegister : Fragment(R.layout.fragment_register) {
         view.findViewById<View>(R.id.loginLink).setOnClickListener {
             (activity as? ActivityPreLogin)?.showLogin()
         }
+        val continueButton = view.findViewById<View>(R.id.continueWithoutLogin)
+        val forceAuth = (activity as? ActivityPreLogin)?.isForceAuth() == true
+        continueButton.visibility = if (forceAuth) View.GONE else View.VISIBLE
+        continueButton.setOnClickListener {
+            (activity as? ActivityPreLogin)?.continueWithoutAccount()
+        }
 
         registerButton.setOnClickListener {
-            nameLayout.error = null
-            emailLayout.error = null
-            passwordLayout.error = null
-            confirmLayout.error = null
+            nameLayout.setErrorKeepEndIcon(null)
+            emailLayout.setErrorKeepEndIcon(null)
+            passwordLayout.setErrorKeepEndIcon(null)
+            confirmLayout.setErrorKeepEndIcon(null)
 
             val name = inputName.text?.toString()?.trim().orEmpty()
             val email = inputEmail.text?.toString()?.trim().orEmpty()
@@ -53,29 +60,29 @@ class FragmentRegister : Fragment(R.layout.fragment_register) {
 
             var invalid = false
             if (name.isEmpty()) {
-                nameLayout.error = getString(R.string.error_fill_all_fields)
+                nameLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 invalid = true
             }
             if (email.isEmpty()) {
-                emailLayout.error = getString(R.string.error_fill_all_fields)
+                emailLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 invalid = true
             } else if (!email.contains("@") || !email.contains(".")) {
-                emailLayout.error = getString(R.string.error_invalid_email)
+                emailLayout.setErrorKeepEndIcon(getString(R.string.error_invalid_email))
                 invalid = true
             }
             if (password.isEmpty()) {
-                passwordLayout.error = getString(R.string.error_fill_all_fields)
+                passwordLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 invalid = true
             } else if (password.length < 6) {
-                passwordLayout.error = getString(R.string.error_password_too_short)
+                passwordLayout.setErrorKeepEndIcon(getString(R.string.error_password_too_short))
                 invalid = true
             }
             if (confirmPassword.isEmpty()) {
-                confirmLayout.error = getString(R.string.error_fill_all_fields)
+                confirmLayout.setErrorKeepEndIcon(getString(R.string.error_fill_all_fields))
                 invalid = true
             }
             if (password.isNotEmpty() && password != confirmPassword) {
-                confirmLayout.error = getString(R.string.error_passwords_mismatch)
+                confirmLayout.setErrorKeepEndIcon(getString(R.string.error_passwords_mismatch))
                 invalid = true
             }
             if (invalid) return@setOnClickListener
@@ -107,11 +114,15 @@ class FragmentRegister : Fragment(R.layout.fragment_register) {
                     val serverMsg = e.apiErrorMessage("")
                     when {
                         e.code() == 409 || serverMsg.contains("already", ignoreCase = true) ->
-                            emailLayout.error = getString(R.string.error_email_registered)
+                            emailLayout.setErrorKeepEndIcon(getString(R.string.error_email_registered))
                         serverMsg.contains("password", ignoreCase = true) ->
-                            passwordLayout.error = serverMsg.ifBlank { getString(R.string.error_password_too_short) }
+                            passwordLayout.setErrorKeepEndIcon(
+                                serverMsg.ifBlank { getString(R.string.error_password_too_short) }
+                            )
                         serverMsg.contains("email", ignoreCase = true) ->
-                            emailLayout.error = serverMsg.ifBlank { getString(R.string.error_invalid_email) }
+                            emailLayout.setErrorKeepEndIcon(
+                                serverMsg.ifBlank { getString(R.string.error_invalid_email) }
+                            )
                         else ->
                             Toast.makeText(
                                 requireContext(),

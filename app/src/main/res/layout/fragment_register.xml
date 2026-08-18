@@ -91,7 +91,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
             app:endIconMode="password_toggle"
-            app:errorEnabled="true">
+            app:errorEnabled="true"
+            app:errorIconDrawable="@null">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputPassword"
@@ -115,7 +116,8 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
             app:endIconMode="password_toggle"
-            app:errorEnabled="true">
+            app:errorEnabled="true"
+            app:errorIconDrawable="@null">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputConfirmPassword"
@@ -148,5 +150,15 @@
             android:text="@string/already_have_account"
             android:textColor="@color/app_theme"
             android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/continueWithoutLogin"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/continue_without_login"
+            android:textAllCaps="false"
+            android:textColor="#525A69" />
     </LinearLayout>
 </ScrollView>
