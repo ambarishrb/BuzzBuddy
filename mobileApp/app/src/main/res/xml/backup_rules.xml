@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="database" path="smart_alarms" />
+    <include domain="sharedpref" path="buzz_settings.xml" />
+    <include domain="sharedpref" path="buzz_snooze.xml" />
+    <exclude domain="sharedpref" path="MyPrefs.xml" />
+</full-backup-content>

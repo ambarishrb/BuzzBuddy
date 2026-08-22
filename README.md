@@ -1,6 +1,6 @@
-# ⏰ BuzzBuddy – Smart Alarm Manager (Android)
+# ⏰ BuzzBuddy – Smart Alarm Manager (Android + API)
 
-BuzzBuddy is a feature-rich alarm management application built using Kotlin and XML-based UI.  
+BuzzBuddy is a feature-rich alarm management application built using Kotlin and XML-based UI.
 The app demonstrates persistent alarm scheduling, reboot resilience, system service integration, and structured local data storage.
 
 ---
@@ -19,6 +19,7 @@ The app demonstrates persistent alarm scheduling, reboot resilience, system serv
 - Dismiss alarm directly from notification panel
 - Auto-dismiss ringing after 2 minutes (alarm stays enabled for the next day)
 - Reboot, app-update, timezone, and cold-start rescheduling
+- Optional login and alarm sync with the FastAPI backend
 
 ---
 
@@ -61,7 +62,7 @@ The app demonstrates persistent alarm scheduling, reboot resilience, system serv
 ## ▶️ How to Run
 
 1. Clone the repository
-2. Open in Android Studio
+2. Open the `mobileApp` folder in Android Studio
 3. Sync Gradle
 4. Run on physical device or emulator
 
@@ -81,17 +82,53 @@ The app demonstrates persistent alarm scheduling, reboot resilience, system serv
 ## 📸 Screenshots
 
 ### 🏠 Home Screen
-![Home Screen](Screenshots/Homescreen.jpg)
+![Home Screen](mobileApp/Screenshots/Homescreen.jpg)
 
 ### ⏰ Active Alarm Screen
-![Active Alarm](Screenshots/ActiveAlarm.jpg)
+![Active Alarm](mobileApp/Screenshots/ActiveAlarm.jpg)
 
 ### ✏️ Set Alarm Title
-![Set Title](Screenshots/Set_title.jpg)
+![Set Title](mobileApp/Screenshots/Set_title.jpg)
 
 ### 🔄 Update Alarm
-![Update Alarm](Screenshots/Update.jpg)
+![Update Alarm](mobileApp/Screenshots/Update.jpg)
 
 ### 🗑 Swipe to Delete with Undo
-![Undo Delete](Screenshots/Undo_delete.jpg)
+![Undo Delete](mobileApp/Screenshots/Undo_delete.jpg)
 
+---
+
+## Backend
+
+Login and alarm sync. The API is FastAPI + SQLite. The Android app talks to it over JWT.
+
+### Run the API
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --host 0.0.0.0 --port 8080
+```
+
+Docs: http://127.0.0.1:8080/docs
+
+Set `api.base.url` in `mobileApp/local.properties` to `http://10.0.2.2:8080/` for the emulator, or `http://YOUR_LAN_IP:8080/` for a phone on the same Wi‑Fi. Then register and log in.
+
+### Endpoints
+
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/register` | No |
+| POST | `/api/login` | No |
+| POST | `/api/auth/refresh` | Refresh token |
+| POST | `/api/auth/logout` | Yes |
+| POST | `/api/auth/password-reset/request` | No |
+| POST | `/api/auth/password-reset/confirm` | No |
+| GET | `/api/account/me` | Yes |
+| PUT | `/api/account/password` | Yes |
+| DELETE | `/api/account` | Yes |
+| GET, POST | `/api/alarms` | Yes |
+| PUT, DELETE | `/api/alarms/{id}` | Yes |

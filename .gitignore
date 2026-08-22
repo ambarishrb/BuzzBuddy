@@ -11,11 +11,43 @@ local.properties
 *.apk
 *.aab
 app/release/
+mobileApp/.gradle/
+mobileApp/local.properties
+mobileApp/build/
+mobileApp/app/build/
+mobileApp/captures/
+mobileApp/app/release/
 *-playstore.png
-BuzzBuddy_Improvement_Plan.md
-MANUAL_TESTING.md
+
+# Signing & deployment artifacts (never commit)
 *.jks
 *.keystore
 *.der
 *.pem
 keystore.properties
+Buzz_Buddy.txt
+
+# Python backend
+backend/.env
+backend/.venv/
+backend/venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/*.db
+backend/**/*.db
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Internal planning / agent tooling (not for public showcase)
+.claude/
+.cursor/
+_bmad/
+_bmad-output/
+docs/
+**/prd.md
+**/*testing-guide*
+**/*manual-test*
+BuzzBuddy_Improvement_Plan.md
+MANUAL_TESTING.md
