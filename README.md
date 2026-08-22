@@ -81,19 +81,19 @@ The app demonstrates persistent alarm scheduling, reboot resilience, system serv
 ## 📸 Screenshots
 
 ### 🏠 Home Screen
-![Home Screen](Screenshots/Homescreen.jpg)
+![Home Screen](mobileApp/Screenshots/Homescreen.jpg)
 
 ### ⏰ Active Alarm Screen
-![Active Alarm](Screenshots/ActiveAlarm.jpg)
+![Active Alarm](mobileApp/Screenshots/ActiveAlarm.jpg)
 
 ### ✏️ Set Alarm Title
-![Set Title](Screenshots/Set_title.jpg)
+![Set Title](mobileApp/Screenshots/Set_title.jpg)
 
 ### 🔄 Update Alarm
-![Update Alarm](Screenshots/Update.jpg)
+![Update Alarm](mobileApp/Screenshots/Update.jpg)
 
 ### 🗑 Swipe to Delete with Undo
-![Undo Delete](Screenshots/Undo_delete.jpg)
+![Undo Delete](mobileApp/Screenshots/Undo_delete.jpg)
 
 ---
 
