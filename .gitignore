@@ -13,6 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+mobileApp/.gradle/
+mobileApp/local.properties
+mobileApp/build/
+mobileApp/app/build/
+mobileApp/captures/
 .idea/AndroidProjectSystem.xml
 .idea/appInsightsSettings.xml
 .idea/compiler.xml
@@ -23,6 +28,7 @@ local.properties
 .idea/runConfigurations.xml
 .idea/vcs.xml
 app/release/app-release.aab
+mobileApp/app/release/
 
 # Signing & deployment artifacts (never commit)
 *.jks
